@@ -31,9 +31,9 @@ RUN set -e; \
 
 RUN pip install -r requirements.txt
 
-RUN chmod +x /app/gcsfuse_run.sh
-
 COPY ./app ./app
+
+RUN chmod +x /app/gcsfuse_run.sh
 
 # Use tini to manage zombie processes and signal forwarding
 # https://github.com/krallin/tini
