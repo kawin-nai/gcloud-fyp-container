@@ -1,0 +1,8 @@
+mtcnn==0.1.1
+flask==2.2.2
+tensorflow==2.3.0
+tensorflow-gpu==2.3.0
+matplotlib==3.5.2
+pillow==9.2.0
+google-cloud-storage
+firebase-admin
