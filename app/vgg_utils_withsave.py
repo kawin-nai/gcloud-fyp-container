@@ -1,38 +1,46 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from PIL import Image
 from scipy.spatial.distance import cosine
 from tensorflow.keras.applications.imagenet_utils import preprocess_input
-
-def extract_faces(img_path, detector, required_size=(224, 224)):
-    img = plt.imread(img_path)
-    faces = detector.detect_faces(img)
-    print(img_path, len(faces))
-    if not faces:
-        return None
-    # Extract the list of faces in a photograph
-    face_images = []
-    for face in faces:
-        print(face)
-        # extract the bounding box from the requested face
-        x1, y1, width, height = face['box']
-        x1, y1 = abs(x1), abs(y1)
-        x2, y2 = x1 + width, y1 + height
-
-        # extract the face
-        face_boundary = img[y1:y2, x1:x2]
-        plt.imshow(face_boundary)
-        # resize pixels to the model size
-        face_image = Image.fromarray(face_boundary)
-        face_image = face_image.resize(required_size)
-        face_array = np.asarray(face_image)
-        face_images.append(face_array)
-    return face_images
+from firebase_admin import credentials, storage
 
 
-def extract_face(path, detector, required_size=(224, 224)):
+# def extract_faces(img_path, detector, required_size=(224, 224)):
+#     img = plt.imread(img_path)
+#     faces = detector.detect_faces(img)
+#     print(img_path, len(faces))
+#     if not faces:
+#         return None
+#     # Extract the list of faces in a photograph
+#     face_images = []
+#     for face in faces:
+#         print(face)
+#         # extract the bounding box from the requested face
+#         x1, y1, width, height = face['box']
+#         x1, y1 = abs(x1), abs(y1)
+#         x2, y2 = x1 + width, y1 + height
+#
+#         # extract the face
+#         face_boundary = img[y1:y2, x1:x2]
+#         plt.imshow(face_boundary)
+#         # resize pixels to the model size
+#         face_image = Image.fromarray(face_boundary)
+#         face_image = face_image.resize(required_size)
+#         face_array = np.asarray(face_image)
+#         face_images.append(face_array)
+#     return face_images
+
+
+def extract_face(img_path, detector, required_size=(224, 224)):
     try:
-        img = plt.imread(path)
+        # bucket = storage.bucket()
+        # blob = bucket.blob(img_path)
+        # path = "input.jpg"
+        # blob.download_to_filename(path)
+        img = plt.imread(img_path)
+        # os.remove(path)
     except:
         return None
     faces = detector.detect_faces(img)
@@ -51,13 +59,13 @@ def extract_face(path, detector, required_size=(224, 224)):
     return face_array
 
 
-def draw_faces(faces):
-    # draw each face separately
-    for i in range(len(faces)):
-        plt.subplot(1, len(faces), i + 1)
-        plt.axis('off')
-        plt.imshow(faces[i])
-    plt.show()
+# def draw_faces(faces):
+#     # draw each face separately
+#     for i in range(len(faces)):
+#         plt.subplot(1, len(faces), i + 1)
+#         plt.axis('off')
+#         plt.imshow(faces[i])
+#     plt.show()
 
 
 # def preprocess_input(x, data_format=None, version=1):

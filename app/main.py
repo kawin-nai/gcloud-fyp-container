@@ -18,6 +18,8 @@ default_app = firebase_admin.initialize_app(cred, {'storageBucket': 'fyptest-5e7
 vgg_descriptor = None
 detector = None
 
+input_path = "application-data/input_faces/input.jpg"
+
 
 def initialize_model():
     global vgg_descriptor
@@ -49,7 +51,6 @@ def list_pickle():
     for blob in blobs:
         if blob.name.endswith('.npy'):
             content = blob.download_as_string()
-            filesize = len(content).to_bytes(4, 'big')
             blob_list.append(content)
             npy_dict[blob.name] = np.load(BytesIO(content)).tolist()
     return json.dumps(npy_dict, indent=4)
@@ -59,46 +60,59 @@ def list_pickle():
 def write_txt_file():
     file_path = "requirements.txt"
     bucket = storage.bucket()
-    blob = bucket.blob(file_path)
+    # Create a blob with the file path (destination blob name)
+    blob = bucket.blob("test_folder/" + file_path)
+    # Upload the file to the destination path using the source file name
     blob.upload_from_filename(file_path)
     return 'Success'
 
 
-# @app.route('/verify')
-# def predict():
-#     try:
-#         input_img_path = os.path.join(input_path, "input.jpg")
-#         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
-#         if input_embedding is None:
-#             raise Exception("No face detected in input image")
-#
-#         all_distance = {}
-#         for persons in os.listdir(verified_path):
-#             # print(persons)
-#             person_distance = []
-#             images = []
-#             for image in os.listdir(os.path.join(verified_path, persons)):
-#                 full_img_path = os.path.join(verified_path, persons, image)
-#                 if full_img_path[-3:] == "jpg":
-#                     images.append(full_img_path)
-#                 # Get embeddings
-#             embeddings = get_embeddings(images, detector, vgg_descriptor)
-#             if embeddings is None:
-#                 print("No faces detected")
-#                 continue
-#             # Check if the input face is a match for the known face
-#             # print("input_embedding", input_embedding)
-#             for embedding in embeddings:
-#                 score = is_match(embedding, input_embedding)
-#                 person_distance.append(score)
-#             # Calculate the average distance for each person
-#             all_distance[persons] = np.mean(person_distance)
-#         top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
-#         return top_ten
-#     except Exception as e:
-#         return str(e)
+@app.route('/download')
+def download():
+    bucket = storage.bucket()
+    blob = bucket.blob(input_path)
+    blob.download_to_filename("input.jpg")
+    # Get file stat
+    stat = os.stat("input.jpg")
+    # Delete the file
+    os.remove("input.jpg")
+    return str(stat.st_size)
+
+@app.route('/verify')
+def predict():
+    try:
+        input_img_path = os.path.join(input_path, "input.jpg")
+        input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
+        if input_embedding is None:
+            raise Exception("No face detected in input image")
+
+        all_distance = {}
+        for persons in os.listdir(verified_path):
+            # print(persons)
+            person_distance = []
+            images = []
+            for image in os.listdir(os.path.join(verified_path, persons)):
+                full_img_path = os.path.join(verified_path, persons, image)
+                if full_img_path[-3:] == "jpg":
+                    images.append(full_img_path)
+                # Get embeddings
+            embeddings = get_embeddings(images, detector, vgg_descriptor)
+            if embeddings is None:
+                print("No faces detected")
+                continue
+            # Check if the input face is a match for the known face
+            # print("input_embedding", input_embedding)
+            for embedding in embeddings:
+                score = is_match(embedding, input_embedding)
+                person_distance.append(score)
+            # Calculate the average distance for each person
+            all_distance[persons] = np.mean(person_distance)
+        top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
+        return top_ten
+    except Exception as e:
+        return str(e)
 
 
 if __name__ == "__main__":
     initialize_model()
-    app.run(debug=True, host="0.0.0.0", port=80)
+    app.run(debug=True, host="0.0.0.0", port=80, use_reloader=False)
