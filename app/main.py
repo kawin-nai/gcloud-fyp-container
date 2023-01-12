@@ -19,6 +19,7 @@ vgg_descriptor = None
 detector = None
 
 input_path = "application-data/input_faces/input.jpg"
+mnt_dir = "mnt"
 
 
 def initialize_model():
@@ -42,6 +43,7 @@ def list_files():
     for blob in blobs:
         blob_list.append(blob.name)
     return json.dumps(blob_list, indent=4)
+
 
 @app.route('/pickle')
 def list_pickle():
@@ -77,6 +79,12 @@ def download():
     # Delete the file
     os.remove("input.jpg")
     return str(stat.st_size)
+
+
+@app.route('/dir')
+def mount_dir():
+    return str(os.listdir(mnt_dir))
+
 
 @app.route('/verify')
 def predict():
