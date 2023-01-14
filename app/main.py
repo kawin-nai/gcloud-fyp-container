@@ -12,14 +12,14 @@ import json
 
 # Create the ShareServiceClient object which will be used to create a container client
 app = Flask(__name__)
-cred = credentials.Certificate("fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json")
-default_app = firebase_admin.initialize_app(cred, {'storageBucket': 'fyptest-5e73d.appspot.com'})
+cred = credentials.Certificate(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'))
+default_app = firebase_admin.initialize_app(cred, {'storageBucket': os.environ.get('BUCKET_NAME')})
 
 vgg_descriptor = None
 detector = None
 
 input_path = "application-data/input_faces/input.jpg"
-mnt_dir = "mnt"
+mnt_dir = os.environ.get('MNT_DIR', '/mnt')
 
 
 def initialize_model():

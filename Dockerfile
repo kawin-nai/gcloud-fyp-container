@@ -6,6 +6,8 @@ ENV MNT_DIR /mnt
 
 ENV BUCKET fyptest-5e73d.appspot.com
 
+ENV GOOGLE_APPLICATION_CREDENTIALS fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json
+
 COPY requirements.txt .
 
 COPY fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json .
@@ -41,7 +43,7 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Pass the startup script as arguments to Tini
 CMD ["/app/gcsfuse_run.sh"]
-
-ENTRYPOINT []
-
-CMD ["python", "./app/main.py"]
+#
+#ENTRYPOINT []
+#
+#CMD ["python", "./app/main.py"]

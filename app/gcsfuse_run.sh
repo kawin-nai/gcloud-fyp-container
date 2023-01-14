@@ -5,7 +5,8 @@ set -eo pipefail
 mkdir -p $MNT_DIR
 
 echo "Mounting GCS Fuse."
-gcsfuse --debug_gcs --debug_fuse $BUCKET $MNT_DIR
+# shellcheck disable=SC2086
+gcsfuse --foreground --debug_gcs --debug_fuse $BUCKET $MNT_DIR
 echo "Mounting completed."
 
 ## Run the web service on container startup. Here we use the gunicorn
@@ -15,5 +16,8 @@ echo "Mounting completed."
 ## Timeout is set to 0 to disable the timeouts of the workers to allow Cloud Run to handle instance scaling.
 #exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app &
 
+# Execute Python script
+python app/main.py
+
 # Exit immediately when one of the background processes terminate.
-wait -n
+#wait -n
