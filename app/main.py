@@ -1,3 +1,6 @@
+import datetime
+from os.path import isdir
+
 from flask import Flask
 from vgg_utils_withsave import *
 from vgg_scratch import *
@@ -12,14 +15,16 @@ import json
 
 # Create the ShareServiceClient object which will be used to create a container client
 app = Flask(__name__)
-cred = credentials.Certificate(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'))
-default_app = firebase_admin.initialize_app(cred, {'storageBucket': os.environ.get('BUCKET_NAME')})
+cred = credentials.Certificate(str(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')))
+default_app = firebase_admin.initialize_app(cred, {'storageBucket': str(os.environ.get('BUCKET_NAME'))})
 
 vgg_descriptor = None
 detector = None
 
-input_path = "application-data/input_faces/input.jpg"
-mnt_dir = os.environ.get('MNT_DIR', '/mnt')
+mnt_dir = os.environ.get('MNT_DIR', 'mnt')
+input_path = os.path.join(mnt_dir, "application-data", "input_faces")
+verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
+filename = 'test-file'
 
 
 def initialize_model():
@@ -30,9 +35,42 @@ def initialize_model():
     detector = mtcnn.MTCNN()
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def index(path):
+    path = os.path.join(mnt_dir, path)
+    html = '<html><body><h1>Files</h1>\n'
+    if path == mnt_dir:
+        try:
+            write_file(mnt_dir, filename)
+            html += '<p>File written to {}</p>\n'.format(path)
+        except Exception as e:
+            return str(e)
+
+    if isdir(path):
+        return json.dumps(os.listdir(path))
+    else:
+        try:
+            html += read_file(path)
+        except Exception as e:
+            return str(e)
+
+    html += '</body></html>'
+    return html
+
+
+def write_file(mnt_dir, filename):
+    """Write files to a directory with date created"""
+    date = datetime.datetime.utcnow()
+    file_date = '{dt:%a}-{dt:%b}-{dt:%d}-{dt:%H}:{dt:%M}-{dt:%Y}'.format(dt=date)
+    with open(f'{mnt_dir}/{filename}-{file_date}.txt', 'a') as f:
+        f.write(f'This test file was created on {date}.')
+
+
+def read_file(full_path):
+    """Read files and return contents"""
+    with open(full_path, 'r') as reader:
+        return reader.read()
 
 
 # Go through all directories and files and list their paths
@@ -66,6 +104,14 @@ def write_txt_file():
     blob = bucket.blob("test_folder/" + file_path)
     # Upload the file to the destination path using the source file name
     blob.upload_from_filename(file_path)
+    return 'Success'
+
+
+@app.route('/writemnt')
+def write_mnt_file():
+    file_path = os.path.join(mnt_dir, filename + '.txt')
+    with open(file_path, 'w') as f:
+        f.write('test')
     return 'Success'
 
 
@@ -116,11 +162,13 @@ def predict():
             # Calculate the average distance for each person
             all_distance[persons] = np.mean(person_distance)
         top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
-        return top_ten
+        return json.dumps(top_ten, indent=4)
     except Exception as e:
         return str(e)
 
 
 if __name__ == "__main__":
     initialize_model()
+    # print working directory
+    print(os.getcwd())
     app.run(debug=True, host="0.0.0.0", port=80, use_reloader=False)

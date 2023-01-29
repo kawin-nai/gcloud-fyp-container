@@ -6,8 +6,6 @@ ENV MNT_DIR /mnt
 
 ENV BUCKET fyptest-5e73d.appspot.com
 
-ENV GOOGLE_APPLICATION_CREDENTIALS fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json
-
 COPY requirements.txt .
 
 COPY fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json .
@@ -32,6 +30,8 @@ RUN set -e; \
 #RUN apt-get install -y libgl1-mesa-glx
 
 RUN pip install -r requirements.txt
+
+ENV GOOGLE_APPLICATION_CREDENTIALS fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json
 
 COPY ./app ./app
 

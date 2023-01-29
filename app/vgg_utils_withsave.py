@@ -35,16 +35,13 @@ from firebase_admin import credentials, storage
 
 def extract_face(img_path, detector, required_size=(224, 224)):
     try:
-        # bucket = storage.bucket()
-        # blob = bucket.blob(img_path)
-        # path = "input.jpg"
-        # blob.download_to_filename(path)
         img = plt.imread(img_path)
-        # os.remove(path)
-    except:
+    except Exception as e:
+        print("extract_face Exception", e)
         return None
     faces = detector.detect_faces(img)
     if not faces:
+        print ("No face detected in extract_face")
         return None
     # extract details of the largest face
     x1, y1, width, height = faces[0]['box']
