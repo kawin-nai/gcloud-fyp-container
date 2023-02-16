@@ -74,68 +74,71 @@ def read_file(full_path):
 
 
 # Go through all directories and files and list their paths
-@app.route('/list')
-def list_files():
-    blobs = storage.bucket().list_blobs()
-    blob_list = []
-    for blob in blobs:
-        blob_list.append(blob.name)
-    return json.dumps(blob_list, indent=4)
+# @app.route('/list')
+# def list_files():
+#     blobs = storage.bucket().list_blobs()
+#     blob_list = []
+#     for blob in blobs:
+#         blob_list.append(blob.name)
+#     return json.dumps(blob_list, indent=4)
+#
+#
+# @app.route('/pickle')
+# def list_pickle():
+#     blobs = storage.bucket().list_blobs()
+#     npy_dict = dict()
+#     blob_list = []
+#     for blob in blobs:
+#         if blob.name.endswith('.npy'):
+#             content = blob.download_as_string()
+#             blob_list.append(content)
+#             npy_dict[blob.name] = np.load(BytesIO(content)).tolist()
+#     return json.dumps(npy_dict, indent=4)
 
 
-@app.route('/pickle')
-def list_pickle():
-    blobs = storage.bucket().list_blobs()
-    npy_dict = dict()
-    blob_list = []
-    for blob in blobs:
-        if blob.name.endswith('.npy'):
-            content = blob.download_as_string()
-            blob_list.append(content)
-            npy_dict[blob.name] = np.load(BytesIO(content)).tolist()
-    return json.dumps(npy_dict, indent=4)
+# @app.route('/write')
+# def write_txt_file():
+#     file_path = "requirements.txt"
+#     bucket = storage.bucket()
+#     # Create a blob with the file path (destination blob name)
+#     blob = bucket.blob("test_folder/" + file_path)
+#     # Upload the file to the destination path using the source file name
+#     blob.upload_from_filename(file_path)
+#     return 'Success'
+#
+#
+# @app.route('/writemnt')
+# def write_mnt_file():
+#     file_path = os.path.join(mnt_dir, filename + '.txt')
+#     with open(file_path, 'w') as f:
+#         f.write('test')
+#     return 'Success'
+#
+#
+# @app.route('/download')
+# def download():
+#     bucket = storage.bucket()
+#     blob = bucket.blob(input_path)
+#     blob.download_to_filename("input.jpg")
+#     # Get file stat
+#     stat = os.stat("input.jpg")
+#     # Delete the file
+#     os.remove("input.jpg")
+#     return str(stat.st_size)
+#
+#
+# @app.route('/dir')
+# def mount_dir():
+#     return str(os.listdir(mnt_dir))
 
+# @app.route('upload/<filepath>', methods=['POST'])
+# def upload(filepath):
+#     s
 
-@app.route('/write')
-def write_txt_file():
-    file_path = "requirements.txt"
-    bucket = storage.bucket()
-    # Create a blob with the file path (destination blob name)
-    blob = bucket.blob("test_folder/" + file_path)
-    # Upload the file to the destination path using the source file name
-    blob.upload_from_filename(file_path)
-    return 'Success'
-
-
-@app.route('/writemnt')
-def write_mnt_file():
-    file_path = os.path.join(mnt_dir, filename + '.txt')
-    with open(file_path, 'w') as f:
-        f.write('test')
-    return 'Success'
-
-
-@app.route('/download')
-def download():
-    bucket = storage.bucket()
-    blob = bucket.blob(input_path)
-    blob.download_to_filename("input.jpg")
-    # Get file stat
-    stat = os.stat("input.jpg")
-    # Delete the file
-    os.remove("input.jpg")
-    return str(stat.st_size)
-
-
-@app.route('/dir')
-def mount_dir():
-    return str(os.listdir(mnt_dir))
-
-
-@app.route('/verify')
-def predict():
+@app.route('/verify<filepath>', methods=['GET'])
+def predict(filepath):
     try:
-        input_img_path = os.path.join(input_path, "input.jpg")
+        input_img_path = os.path.join(input_path, filepath)
         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
         if input_embedding is None:
             raise Exception("No face detected in input image")
