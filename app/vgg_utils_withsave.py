@@ -116,7 +116,7 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
                     if face_embedding is not None:
                         embeddings.append(face_embedding)
                         if save_to_file:
-                            save_embeddings(face_embedding, file[:-4] + "_embedding.npy")
+                            save_embedding(face_embedding, file[:-4] + "_embedding.npy")
                     else:
                         print("Get embedding function return None", file)
                         raise Exception("Get embedding function return None")
@@ -125,7 +125,7 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
                 if face_embedding is not None:
                     embeddings.append(face_embedding)
                     if save_to_file:
-                        save_embeddings(face_embedding, file[:-4] + "_embedding.npy")
+                        save_embedding(face_embedding, file[:-4] + "_embedding.npy")
                 else:
                     print("Get embedding function return None", file)
                     raise Exception("Get embedding function return None")
@@ -135,7 +135,7 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
         return None
 
 
-def get_embedding(filename, detector, model):
+def get_embedding(filename, detector, model, save_to_file=True):
     # extract largest face in each filename
     face = [extract_face(filename, detector)]
     # convert into an array of samples
@@ -148,6 +148,8 @@ def get_embedding(filename, detector, model):
         # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
         # perform prediction
         yhat = model.predict(sample)
+        if save_to_file:
+            save_embedding(yhat[0], filename[:-4] + "_embedding.npy")
         return yhat[0]
     except Exception as e:
         print(e)
@@ -164,6 +166,6 @@ def is_match(known_embedding, candidate_embedding, thresh=0.4):
     return score
 
 
-def save_embeddings(embeddings, filename):
+def save_embedding(embeddings, filename):
     with open(filename, "wb") as f:
         np.save(f, embeddings)

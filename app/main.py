@@ -135,7 +135,7 @@ def read_file(full_path):
 # def upload(filepath):
 #     s
 
-@app.route('/verify<filepath>', methods=['GET'])
+@app.route('/verify/<filepath>', methods=['GET'])
 def predict(filepath):
     try:
         input_img_path = os.path.join(input_path, filepath)
@@ -165,9 +165,22 @@ def predict(filepath):
             # Calculate the average distance for each person
             all_distance[persons] = np.mean(person_distance)
         top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
-        return json.dumps(top_ten, indent=4)
+        return json.dumps(top_ten, indent=4), 200
     except Exception as e:
-        return str(e)
+        return {"message": str(e)}, 400
+
+
+@app.route('/upload/<filepath>', methods=['POST'])
+def upload(filepath):
+    # Try to get embeddings of the uploaded image
+    try:
+        input_img_path = os.path.join(input_path, filepath)
+        input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
+        if input_embedding is None:
+            raise Exception("No face detected in input image")
+
+    except Exception as e:
+        return {"message": str(e)}, 400
 
 
 if __name__ == "__main__":
