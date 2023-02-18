@@ -165,7 +165,12 @@ def predict(filepath):
             # Calculate the average distance for each person
             all_distance[persons] = np.mean(person_distance)
         top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
-        return json.dumps(top_ten, indent=4), 200
+        # convert top_ten[0][1] to float
+        verified = "False"
+        if float(top_ten[0][1]) < 0.4:
+            verified = "True"
+
+        return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
     except Exception as e:
         return {"message": str(e)}, 400
 
@@ -178,6 +183,7 @@ def upload(filepath):
         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
         if input_embedding is None:
             raise Exception("No face detected in input image")
+        return {"message": "Success"}, 200
 
     except Exception as e:
         return {"message": str(e)}, 400
