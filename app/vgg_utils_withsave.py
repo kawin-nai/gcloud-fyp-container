@@ -158,6 +158,40 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
         return None
 
 
+# def get_embeddings_from_urls(urls, detector, model, read_from_file=True, save_to_file=True):
+#     try:
+#         # extract the largest face in each filename
+#         # convert into an array of samples
+#         embeddings = []
+#         for url in urls:
+#             if read_from_file:
+#                 try:
+#                     with open(file[:-4] + "_embedding.npy", "rb") as f:
+#                         file_embedding = np.load(f, allow_pickle=True)
+#                         embeddings.append(file_embedding)
+#                 except FileNotFoundError:
+#                     face_embedding = get_embedding(file, detector, model)
+#                     if face_embedding is not None:
+#                         embeddings.append(face_embedding)
+#                         if save_to_file:
+#                             save_embedding(face_embedding, file[:-4] + "_embedding.npy")
+#                     else:
+#                         print("Get embedding function return None", file)
+#                         raise Exception("Get embedding function return None")
+#             else:
+#                 face_embedding = get_embedding(file, detector, model)
+#                 if face_embedding is not None:
+#                     embeddings.append(face_embedding)
+#                     if save_to_file:
+#                         save_embedding(face_embedding, file[:-4] + "_embedding.npy")
+#                 else:
+#                     print("Get embedding function return None", file)
+#                     raise Exception("Get embedding function return None")
+#         return embeddings
+#     except Exception as e:
+#         print(e)
+#         return None
+
 def get_embedding(filename, detector, model, save_to_file=True):
     # extract largest face in each filename
     face = [extract_face(filename, detector)]
@@ -173,6 +207,26 @@ def get_embedding(filename, detector, model, save_to_file=True):
         yhat = model.predict(sample)
         if save_to_file:
             save_embedding(yhat[0], filename[:-4] + "_embedding.npy")
+        return yhat[0]
+    except Exception as e:
+        print(e)
+        return None
+
+def get_embedding_from_url(url, detector, model):
+    # extract largest face in each filename
+    face = [extract_face_from_url(url, detector)]
+    # convert into an array of samples
+    try:
+        sample = np.asarray(face, 'float32')
+        # prepare the face for the model, e.g. center pixels
+        # samples = preprocess_input(samples, version=2)
+        sample = preprocess_input(sample, data_format='channels_last')
+        # create a vggface model
+        # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+        # perform prediction
+        yhat = model.predict(sample)
+        # if save_to_file:
+        #     save_embedding(yhat[0], filename[:-4] + "_embedding.npy")
         return yhat[0]
     except Exception as e:
         print(e)

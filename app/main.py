@@ -5,7 +5,7 @@ from flask import Flask
 from vgg_utils_withsave import *
 from vgg_scratch import *
 from tensorflow.keras.models import Model
-from firebase_admin import credentials, storage
+from firebase_admin import credentials, storage, firestore
 from io import BytesIO
 import time
 import os
@@ -17,6 +17,8 @@ import json
 app = Flask(__name__)
 cred = credentials.Certificate(str(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')))
 default_app = firebase_admin.initialize_app(cred, {'storageBucket': str(os.environ.get('BUCKET_NAME'))})
+db = firestore.client(default_app)
+bucket = storage.bucket(name=str(os.environ.get('BUCKET_NAME')), app=default_app)
 
 vgg_descriptor = None
 detector = None
@@ -24,7 +26,7 @@ detector = None
 mnt_dir = os.environ.get('MNT_DIR', 'mnt')
 input_path = os.path.join(mnt_dir, "application-data", "input_faces")
 verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
-filename = 'test-file'
+# filename = 'test-file'
 
 
 def initialize_model():
@@ -166,6 +168,38 @@ def predict(filepath):
             all_distance[persons] = np.mean(person_distance)
         top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
         # convert top_ten[0][1] to float
+        verified = "False"
+        if float(top_ten[0][1]) < 0.4:
+            verified = "True"
+
+        return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
+    except Exception as e:
+        return {"message": str(e)}, 400
+
+
+@app.route('/verifyfromdb', methods=['GET'])
+def predict_from_db():
+    try:
+        input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
+        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor)
+        if input_embedding is None:
+            raise Exception("No face detected in input image")
+
+        verified_faces_ref = db.collection(u'verified_faces')
+        verified_faces = verified_faces_ref.stream()
+
+        all_distance = {}
+        for person in verified_faces:
+            person_name = person.id
+            person_distance = []
+            person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
+            person_faces = person_faces_ref.stream()
+            for image in person_faces:
+                raw_embedding = np.array(image.to_dict()['raw_embedding'])
+                score = is_match(raw_embedding, input_embedding)
+                person_distance.append(score)
+            all_distance[person_name] = np.mean(person_distance)
+        top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
         verified = "False"
         if float(top_ten[0][1]) < 0.4:
             verified = "True"
