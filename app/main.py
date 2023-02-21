@@ -35,28 +35,28 @@ def initialize_model():
     detector = mtcnn.MTCNN()
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def index(path):
-    path = os.path.join(mnt_dir, path)
-    html = '<html><body><h1>Files</h1>\n'
-    if path == mnt_dir:
-        try:
-            write_file(mnt_dir, filename)
-            html += '<p>File written to {}</p>\n'.format(path)
-        except Exception as e:
-            return str(e)
-
-    if isdir(path):
-        return json.dumps(os.listdir(path))
-    else:
-        try:
-            html += read_file(path)
-        except Exception as e:
-            return str(e)
-
-    html += '</body></html>'
-    return html
+# @app.route('/', defaults={'path': ''})
+# @app.route('/<path:path>')
+# def index(path):
+#     path = os.path.join(mnt_dir, path)
+#     html = '<html><body><h1>Files</h1>\n'
+#     if path == mnt_dir:
+#         try:
+#             write_file(mnt_dir, filename)
+#             html += '<p>File written to {}</p>\n'.format(path)
+#         except Exception as e:
+#             return str(e)
+#
+#     if isdir(path):
+#         return json.dumps(os.listdir(path))
+#     else:
+#         try:
+#             html += read_file(path)
+#         except Exception as e:
+#             return str(e)
+#
+#     html += '</body></html>'
+#     return html
 
 
 def write_file(mnt_dir, filename):

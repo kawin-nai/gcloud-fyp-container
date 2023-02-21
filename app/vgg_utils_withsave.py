@@ -1,3 +1,4 @@
+import urllib
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -31,6 +32,28 @@ from firebase_admin import credentials, storage
 #         face_array = np.asarray(face_image)
 #         face_images.append(face_array)
 #     return face_images
+
+def extract_face_from_url(url, detector, required_size=(224, 224)):
+    try:
+        img = np.array(Image.open(urllib.request.urlopen(url)))
+    except Exception as e:
+        print("extract_face Exception", e)
+        return None
+    faces = detector.detect_faces(np.array(img))
+    if not faces:
+        print ("No face detected in extract_face")
+        return None
+    # extract details of the largest face
+    x1, y1, width, height = faces[0]['box']
+    x1, y1 = abs(x1), abs(y1)
+    x2, y2 = x1 + width, y1 + height
+    # extract the face
+    face_boundary = img[y1:y2, x1:x2]
+    # resize pixels to the model size
+    face_image = Image.fromarray(face_boundary)
+    face_image = face_image.resize(required_size)
+    face_array = np.asarray(face_image)
+    return face_array
 
 
 def extract_face(img_path, detector, required_size=(224, 224)):
