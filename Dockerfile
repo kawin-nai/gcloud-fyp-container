@@ -25,11 +25,13 @@ RUN set -e; \
     apt-get install -y gcsfuse \
     && apt-get clean
 
-#RUN apt-get update
-
+#RUN apt-get update -y
+#
 #RUN apt-get install -y libgl1-mesa-glx
 
-RUN pip install -r requirements.txt
+RUN #pip install --upgrade pip
+
+RUN pip install --default-timeout=100 -r requirements.txt
 
 ENV GOOGLE_APPLICATION_CREDENTIALS fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json
 
@@ -39,11 +41,13 @@ RUN chmod +x /app/gcsfuse_run.sh
 
 # Use tini to manage zombie processes and signal forwarding
 # https://github.com/krallin/tini
-ENTRYPOINT ["/usr/bin/tini", "--"]
+#ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Pass the startup script as arguments to Tini
-CMD ["/app/gcsfuse_run.sh"]
+#CMD ["/app/gcsfuse_run.sh"]
 #
 #ENTRYPOINT []
 #
-#CMD ["python", "./app/main.py"]
+CMD ["mkdir", "$MNT_DIR"]
+
+CMD ["python", "./app/main.py"]
