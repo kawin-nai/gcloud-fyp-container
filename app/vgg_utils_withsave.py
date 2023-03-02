@@ -2,6 +2,8 @@ import urllib
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import dlib
+import cv2
 from PIL import Image
 from scipy.spatial.distance import cosine
 from tensorflow.keras.applications.imagenet_utils import preprocess_input
@@ -76,6 +78,35 @@ def extract_face(img_path, detector, required_size=(224, 224)):
     face_image = Image.fromarray(face_boundary)
     face_image = face_image.resize(required_size)
     face_array = np.asarray(face_image)
+    return face_array
+
+def extract_face_mmod(img_path, detector, required_size=(224, 224)):
+    try:
+        img = plt.imread(img_path)
+    except Exception as e:
+        print("extract_face Exception mmod", e)
+        return None
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    rects = detector(gray, 1)
+    if not rects:
+        print ("No face detected in extract_face mmod")
+        return None
+    # extract details of the largest face
+    left, top, right, bottom = 0, 0, 0, 0
+    for (i, rect) in enumerate(rects):
+        left = rect.rect.left()  # x1
+        top = rect.rect.top()  # y1
+        right = rect.rect.right()  # x2
+        bottom = rect.rect.bottom()  # y2
+    width = right - left
+    height = bottom - top
+    # extract the face
+    img_crop = img[top:top+height,left:left+width]
+    # resize pixels to the model size
+    face_image = Image.fromarray(img_crop)
+    face_image = face_image.resize(required_size)
+    face_array = np.asarray(face_image)
+    print('mmod + cv2', face_array)
     return face_array
 
 
@@ -195,6 +226,27 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
 def get_embedding(filename, detector, model, save_to_file=True):
     # extract largest face in each filename
     face = [extract_face(filename, detector)]
+    # convert into an array of samples
+    try:
+        sample = np.asarray(face, 'float32')
+        # prepare the face for the model, e.g. center pixels
+        # samples = preprocess_input(samples, version=2)
+        sample = preprocess_input(sample, data_format='channels_last')
+        # create a vggface model
+        # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+        # perform prediction
+        yhat = model.predict(sample)
+        if save_to_file:
+            save_embedding(yhat[0], filename[:-4] + "_embedding.npy")
+        return yhat[0]
+    except Exception as e:
+        print(e)
+        return None
+
+
+def get_embedding_mmod(filename, detector, model, save_to_file=False):
+    # extract largest face in each filename
+    face = [extract_face_mmod(detector, filename)]
     # convert into an array of samples
     try:
         sample = np.asarray(face, 'float32')

@@ -144,6 +144,9 @@ def predict(filepath):
     try:
         input_img_path = os.path.join(input_path, filepath)
         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
+        dnnFaceDetector = dlib.cnn_face_detection_model_v1("./app/weights/mmod_human_face_detector.dat")
+        mmod_embedding = get_embedding_mmod(input_img_path, dnnFaceDetector, vgg_descriptor)
+        print(mmod_embedding)
         if input_embedding is None:
             raise Exception("No face detected in input image")
 
