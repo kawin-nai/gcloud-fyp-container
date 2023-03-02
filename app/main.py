@@ -185,7 +185,6 @@ def predict(filepath):
 @app.route('/verifyfromdb', methods=['GET'])
 def predict_from_db():
     # Get request headers
-    # Currently not implemented due to priority
 
     # received_date_time = datetime.datetime.now()
     # print(request.get_json(force=True))
