@@ -144,9 +144,9 @@ def predict(filepath):
     try:
         input_img_path = os.path.join(input_path, filepath)
         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
-        dnnFaceDetector = dlib.cnn_face_detection_model_v1("./app/weights/mmod_human_face_detector.dat")
-        mmod_embedding = get_embedding_mmod(input_img_path, dnnFaceDetector, vgg_descriptor)
-        print(mmod_embedding)
+        # dnnFaceDetector = dlib.cnn_face_detection_model_v1("./app/weights/mmod_human_face_detector.dat")
+        # mmod_embedding = get_embedding_mmod(input_img_path, dnnFaceDetector, vgg_descriptor)
+        # print(mmod_embedding)
         if input_embedding is None:
             raise Exception("No face detected in input image")
 
@@ -228,19 +228,39 @@ def predict_from_db():
         return {"message": str(e)}, 400
 
 
-@app.route('/upload/<filepath>', methods=['POST'])
-def upload(filepath):
-    # Try to get embeddings of the uploaded image
+# @app.route('/upload/<filepath>', methods=['POST'])
+# def upload(filepath):
+#     # Try to get embeddings of the uploaded image
+#     try:
+#         input_img_path = os.path.join(input_path, filepath)
+#         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
+#         if input_embedding is None:
+#             raise Exception("No face detected in input image")
+#         return {"message": "Success"}, 200
+#
+#     except Exception as e:
+#         return {"message": str(e)}, 400
+
+
+@app.route('uploadtodb/<filename>', methods=['POST'])
+def uploadtodb(filename):
     try:
-        input_img_path = os.path.join(input_path, filepath)
-        input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
-        if input_embedding is None:
-            raise Exception("No face detected in input image")
-        return {"message": "Success"}, 200
+        # Image name format = (Lastname_Firstname_Datetime).jpg
+        filename_fragment = filename.split('_')
+        person_name = filename_fragment('_')[0] + '_' + filename_fragment[1]
+        upload_url = db.collection(u'upload_faces').document(u'upload').get().to_dict()['image_url']
+        logging.info(upload_url)
+        upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor)
+        if upload_embedding is None:
+            raise Exception("No face detected in uploaded image")
+        image_name_without_extension = filename.split('.')[0]
+
+        # Upload to firestore
+        db.collection(u'verified_faces').document(person_name).collection(u'faces')\
+            .document(image_name_without_extension).set({'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
 
     except Exception as e:
         return {"message": str(e)}, 400
-
 
 if __name__ == "__main__":
     initialize_model()

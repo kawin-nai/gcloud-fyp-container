@@ -76,8 +76,10 @@ def extract_face(img_path, detector, required_size=(224, 224)):
     face_boundary = img[y1:y2, x1:x2]
     # resize pixels to the model size
     face_image = Image.fromarray(face_boundary)
+    # plt.imshow(face_image)
     face_image = face_image.resize(required_size)
     face_array = np.asarray(face_image)
+
     return face_array
 
 def extract_face_mmod(img_path, detector, required_size=(224, 224)):
@@ -290,6 +292,7 @@ def is_match(image_name, known_embedding, candidate_embedding, thresh=0.4):
     score = cosine(known_embedding, candidate_embedding)
     if score <= thresh:
         print('>face is a Match (%.3f <= %.3f) %s' % (score, thresh, image_name))
+        print(candidate_embedding)
     else:
         print('>face is NOT a Match (%.3f > %.3f) %s' % (score, thresh, image_name))
     return score
