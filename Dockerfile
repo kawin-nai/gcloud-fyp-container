@@ -18,6 +18,7 @@ RUN set -e; \
     lsb-release; \
     gcsFuseRepo=gcsfuse-`lsb_release -c -s`; \
     echo "deb http://packages.cloud.google.com/apt $gcsFuseRepo main" | \
+#    echo "deb http://packages.cloud.google.com/apt gcsfuse-jammy main" | \
     tee /etc/apt/sources.list.d/gcsfuse.list; \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
     apt-key add -; \
@@ -29,7 +30,7 @@ RUN set -e; \
 #
 #RUN apt-get install -y libgl1-mesa-glx
 
-RUN #pip install --upgrade pip
+RUN pip install --upgrade pip
 
 RUN pip install --default-timeout=100 -r requirements.txt
 
@@ -41,13 +42,13 @@ RUN chmod +x /app/gcsfuse_run.sh
 
 # Use tini to manage zombie processes and signal forwarding
 # https://github.com/krallin/tini
-#ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Pass the startup script as arguments to Tini
-#CMD ["/app/gcsfuse_run.sh"]
-#
+CMD ["/app/gcsfuse_run.sh"]
+
 #ENTRYPOINT []
 #
-CMD ["mkdir", "$MNT_DIR"]
-
-CMD ["python", "./app/main.py"]
+#CMD ["mkdir", "$MNT_DIR"]
+#
+#CMD ["python", "./app/main.py"]

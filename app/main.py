@@ -1,7 +1,8 @@
 import datetime
+import logging
 from os.path import isdir
 
-from flask import Flask
+from flask import Flask, request, jsonify
 from vgg_utils_withsave import *
 from vgg_scratch import *
 from tensorflow.keras.models import Model
@@ -19,6 +20,7 @@ cred = credentials.Certificate(str(os.environ.get('GOOGLE_APPLICATION_CREDENTIAL
 default_app = firebase_admin.initialize_app(cred, {'storageBucket': str(os.environ.get('BUCKET_NAME'))})
 db = firestore.client(default_app)
 bucket = storage.bucket(name=str(os.environ.get('BUCKET_NAME')), app=default_app)
+logging.getLogger().setLevel(logging.DEBUG)
 
 vgg_descriptor = None
 detector = None
@@ -179,8 +181,22 @@ def predict(filepath):
 
 @app.route('/verifyfromdb', methods=['GET'])
 def predict_from_db():
+    # Get request headers
+    # Currently not implemented due to priority
+
+    # received_date_time = datetime.datetime.now()
+    # print(request.get_json(force=True))
+    # header = dict(request.headers)
+    # print(header)
+    # print(type(request.headers), request.headers)
+    # header['received_date_time'] = str(received_date_time)
+    # header = json.dumps(header)
+    # print(type(header), header)
+    # db.collection(u'requests').add(request.get_json(force=True))
+    
     try:
         input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
+        logging.info(input_url)
         input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor)
         if input_embedding is None:
             raise Exception("No face detected in input image")
@@ -196,7 +212,7 @@ def predict_from_db():
             person_faces = person_faces_ref.stream()
             for image in person_faces:
                 raw_embedding = np.array(image.to_dict()['raw_embedding'])
-                score = is_match(raw_embedding, input_embedding)
+                score = is_match(image.to_dict()['image_name'], raw_embedding, input_embedding)
                 person_distance.append(score)
             all_distance[person_name] = np.mean(person_distance)
         top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
