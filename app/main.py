@@ -163,8 +163,8 @@ def predict(filepath):
                 continue
             # Check if the input face is a match for the known face
             # print("input_embedding", input_embedding)
-            for embedding in embeddings:
-                score = is_match(embedding, input_embedding)
+            for index, embedding in enumerate(embeddings):
+                score = is_match(images[index], embedding, input_embedding)
                 person_distance.append(score)
             # Calculate the average distance for each person
             all_distance[persons] = np.mean(person_distance)
