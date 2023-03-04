@@ -36,10 +36,15 @@ from firebase_admin import credentials, storage
 
 def extract_face_from_url(url, detector, required_size=(224, 224)):
     try:
-        img = np.array(Image.open(urllib.request.urlopen(url)))
+        # img = np.array(Image.open(urllib.request.urlopen(url)))
+        img = Image.open(urllib.request.urlopen(url))
     except Exception as e:
         raise e
-    faces = detector.detect_faces(np.array(img))
+    # Rotate image
+    img = np.array(img)
+    rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    faces = detector.detect_faces(rotated_img)
     if not faces:
         raise Exception("No face detected in extract_face")
     # extract details of the largest face
