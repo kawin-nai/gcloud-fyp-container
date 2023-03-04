@@ -20,7 +20,7 @@ cred = credentials.Certificate(str(os.environ.get('GOOGLE_APPLICATION_CREDENTIAL
 default_app = firebase_admin.initialize_app(cred, {'storageBucket': str(os.environ.get('BUCKET_NAME'))})
 db = firestore.client(default_app)
 bucket = storage.bucket(name=str(os.environ.get('BUCKET_NAME')), app=default_app)
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 vgg_descriptor = None
 detector = None
@@ -162,7 +162,7 @@ def predict(filepath):
                 # Get embeddings
             embeddings = get_embeddings(images, detector, vgg_descriptor)
             if embeddings is None:
-                print("No faces detected")
+                logging.debug("No faces detected")
                 continue
             # Check if the input face is a match for the known face
             # print("input_embedding", input_embedding)
@@ -273,6 +273,4 @@ def upload_to_db(filename):
 
 if __name__ == "__main__":
     initialize_model()
-    # print working directory
-    print(os.getcwd())
-    app.run(debug=True, host="0.0.0.0", port=80, use_reloader=False)
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 80)), use_reloader=False)
