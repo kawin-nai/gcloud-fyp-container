@@ -2,7 +2,6 @@ import urllib
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import dlib
 import cv2
 from PIL import Image
 from scipy.spatial.distance import cosine
@@ -39,12 +38,10 @@ def extract_face_from_url(url, detector, required_size=(224, 224)):
     try:
         img = np.array(Image.open(urllib.request.urlopen(url)))
     except Exception as e:
-        print("extract_face Exception", e)
-        return None
+        raise e
     faces = detector.detect_faces(np.array(img))
     if not faces:
-        print ("No face detected in extract_face")
-        return None
+        raise Exception("No face detected in extract_face")
     # extract details of the largest face
     x1, y1, width, height = faces[0]['box']
     x1, y1 = abs(x1), abs(y1)
@@ -62,12 +59,10 @@ def extract_face(img_path, detector, required_size=(224, 224)):
     try:
         img = plt.imread(img_path)
     except Exception as e:
-        print("extract_face Exception", e)
-        return None
+        raise e
     faces = detector.detect_faces(img)
     if not faces:
-        print ("No face detected in extract_face")
-        return None
+        raise Exception("No face detected in extract_face")
     # extract details of the largest face
     x1, y1, width, height = faces[0]['box']
     x1, y1 = abs(x1), abs(y1)
@@ -267,10 +262,10 @@ def get_embedding_mmod(filename, detector, model, save_to_file=False):
         return None
 
 def get_embedding_from_url(url, detector, model):
-    # extract largest face in each filename
-    face = [extract_face_from_url(url, detector)]
-    # convert into an array of samples
     try:
+        # extract largest face in each filename
+        face = [extract_face_from_url(url, detector)]
+        # convert into an array of samples
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels
         # samples = preprocess_input(samples, version=2)
@@ -283,8 +278,7 @@ def get_embedding_from_url(url, detector, model):
         #     save_embedding(yhat[0], filename[:-4] + "_embedding.npy")
         return yhat[0]
     except Exception as e:
-        print(e)
-        return None
+        raise e
 
 
 def is_match(image_name, known_embedding, candidate_embedding, thresh=0.4):

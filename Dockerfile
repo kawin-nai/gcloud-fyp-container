@@ -4,7 +4,7 @@ ENV PORT=80
 
 ENV MNT_DIR /mnt
 
-ENV BUCKET fyptest-5e73d.appspot.com
+ENV BUCKET_NAME fyptest-5e73d.appspot.com
 
 COPY requirements.txt .
 

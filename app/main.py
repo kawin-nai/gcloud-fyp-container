@@ -252,14 +252,14 @@ def upload_to_db(filename):
         upload_url = upload_dict['image_url']
         logging.info(upload_url)
         upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor)
-        if upload_embedding is None:
-            raise Exception("No face detected in uploaded image")
+        # if upload_embedding is None:
+        #     raise Exception("No face detected in uploaded image")
         image_name_without_extension = filename.split('.')[0]
 
         # Move image to a correct location (correct bucket)
         source_blob = bucket.blob(f"application-data/upload_faces/{filename}")
         destination_blob_name = f"application-data/verified_faces/{person_name}/{filename}"
-        bucket.copy_blob(source_blob, bucket, destination_blob_name)
+        copied_blob = bucket.copy_blob(source_blob, bucket, destination_blob_name)
         logging.info(f"Blob {source_blob.name} moved to {destination_blob_name}")
         # Delete source blob
         bucket.delete_blob(source_blob.name)
@@ -267,7 +267,7 @@ def upload_to_db(filename):
         # Upload to firestore
         db.collection(u'verified_faces').document(person_name).collection(u'faces')\
             .document(image_name_without_extension).set({'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
-        return {"message": "Upload success", "image_name": filename, 'image_url': upload_url, "person_name": person_name}
+        return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url, "person_name": person_name}
     except Exception as e:
         return {"message": str(e)}, 400
 
