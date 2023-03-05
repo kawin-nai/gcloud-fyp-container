@@ -246,7 +246,10 @@ def upload_to_db(filename):
     try:
         # Image name format = (Lastname_Firstname_Datetime).jpg
         filename_fragment = filename.split('_')
-        person_name = filename_fragment[0] + '_' + filename_fragment[1]
+
+        # Concatenate every fragment except the last one
+        person_name = '_'.join(filename_fragment[:-1])
+
         upload_dict = db.collection(u'upload_faces').document(u'upload').get().to_dict()
         # logging.debug(upload_dict)
         upload_url = upload_dict['image_url']
