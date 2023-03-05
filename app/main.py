@@ -1,18 +1,11 @@
-import datetime
-import logging
-from os.path import isdir
-
-from flask import Flask, request, jsonify
+from flask import Flask
 from vgg_utils_withsave import *
 from vgg_scratch import *
 from tensorflow.keras.models import Model
 from firebase_admin import credentials, storage, firestore
-from io import BytesIO
-import time
 import os
 import mtcnn
 import firebase_admin
-import json
 
 # Create the ShareServiceClient object which will be used to create a container client
 app = Flask(__name__)
@@ -28,7 +21,6 @@ detector = None
 mnt_dir = os.environ.get('MNT_DIR', 'mnt')
 input_path = os.path.join(mnt_dir, "application-data", "input_faces")
 verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
-# filename = 'test-file'
 
 
 def initialize_model():
@@ -38,106 +30,6 @@ def initialize_model():
     vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
 
-
-# @app.route('/', defaults={'path': ''})
-# @app.route('/<path:path>')
-# def index(path):
-#     path = os.path.join(mnt_dir, path)
-#     html = '<html><body><h1>Files</h1>\n'
-#     if path == mnt_dir:
-#         try:
-#             write_file(mnt_dir, filename)
-#             html += '<p>File written to {}</p>\n'.format(path)
-#         except Exception as e:
-#             return str(e)
-#
-#     if isdir(path):
-#         return json.dumps(os.listdir(path))
-#     else:
-#         try:
-#             html += read_file(path)
-#         except Exception as e:
-#             return str(e)
-#
-#     html += '</body></html>'
-#     return html
-
-
-def write_file(mnt_dir, filename):
-    """Write files to a directory with date created"""
-    date = datetime.datetime.utcnow()
-    file_date = '{dt:%a}-{dt:%b}-{dt:%d}-{dt:%H}:{dt:%M}-{dt:%Y}'.format(dt=date)
-    with open(f'{mnt_dir}/{filename}-{file_date}.txt', 'a') as f:
-        f.write(f'This test file was created on {date}.')
-
-
-def read_file(full_path):
-    """Read files and return contents"""
-    with open(full_path, 'r') as reader:
-        return reader.read()
-
-
-# Go through all directories and files and list their paths
-# @app.route('/list')
-# def list_files():
-#     blobs = storage.bucket().list_blobs()
-#     blob_list = []
-#     for blob in blobs:
-#         blob_list.append(blob.name)
-#     return json.dumps(blob_list, indent=4)
-#
-#
-# @app.route('/pickle')
-# def list_pickle():
-#     blobs = storage.bucket().list_blobs()
-#     npy_dict = dict()
-#     blob_list = []
-#     for blob in blobs:
-#         if blob.name.endswith('.npy'):
-#             content = blob.download_as_string()
-#             blob_list.append(content)
-#             npy_dict[blob.name] = np.load(BytesIO(content)).tolist()
-#     return json.dumps(npy_dict, indent=4)
-
-
-# @app.route('/write')
-# def write_txt_file():
-#     file_path = "requirements.txt"
-#     bucket = storage.bucket()
-#     # Create a blob with the file path (destination blob name)
-#     blob = bucket.blob("test_folder/" + file_path)
-#     # Upload the file to the destination path using the source file name
-#     blob.upload_from_filename(file_path)
-#     return 'Success'
-#
-#
-# @app.route('/writemnt')
-# def write_mnt_file():
-#     file_path = os.path.join(mnt_dir, filename + '.txt')
-#     with open(file_path, 'w') as f:
-#         f.write('test')
-#     return 'Success'
-#
-#
-# @app.route('/download')
-# def download():
-#     bucket = storage.bucket()
-#     blob = bucket.blob(input_path)
-#     blob.download_to_filename("input.jpg")
-#     # Get file stat
-#     stat = os.stat("input.jpg")
-#     # Delete the file
-#     os.remove("input.jpg")
-#     return str(stat.st_size)
-#
-#
-# @app.route('/dir')
-# def mount_dir():
-#     return str(os.listdir(mnt_dir))
-
-# @app.route('upload/<filepath>', methods=['POST'])
-# def upload(filepath):
-#     s
 
 @app.route('/verify/<filepath>', methods=['GET'])
 def predict(filepath):
@@ -184,18 +76,6 @@ def predict(filepath):
 
 @app.route('/verifyfromdb', methods=['GET'])
 def predict_from_db():
-    # Get request headers
-
-    # received_date_time = datetime.datetime.now()
-    # print(request.get_json(force=True))
-    # header = dict(request.headers)
-    # print(header)
-    # print(type(request.headers), request.headers)
-    # header['received_date_time'] = str(received_date_time)
-    # header = json.dumps(header)
-    # print(type(header), header)
-    # db.collection(u'requests').add(request.get_json(force=True))
-    
     try:
         input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
         logging.info(input_url)
@@ -216,36 +96,21 @@ def predict_from_db():
                 raw_embedding = np.array(image.to_dict()['raw_embedding'])
                 score = is_match(image.to_dict()['image_name'], raw_embedding, input_embedding)
                 person_distance.append(score)
+
             # Calculate the average distance for each person
-            person_object = {}
+            person_object = dict()
             person_object['person_name'] = person_name
             person_object['distance'] = np.mean(person_distance)
             all_distance.append(person_object)
-        print('all_distance', all_distance)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
-        # top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
+
         verified = "False"
         if float(top_ten[0]['distance']) < 0.3:
             verified = "True"
-        print(top_ten)
 
         return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
     except Exception as e:
         return {"message": str(e)}, 400
-
-
-# @app.route('/upload/<filepath>', methods=['POST'])
-# def upload(filepath):
-#     # Try to get embeddings of the uploaded image
-#     try:
-#         input_img_path = os.path.join(input_path, filepath)
-#         input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
-#         if input_embedding is None:
-#             raise Exception("No face detected in input image")
-#         return {"message": "Success"}, 200
-#
-#     except Exception as e:
-#         return {"message": str(e)}, 400
 
 
 @app.route('/uploadtodb/<filename>', methods=['POST'])
@@ -262,8 +127,7 @@ def upload_to_db(filename):
         upload_url = upload_dict['image_url']
         logging.info(upload_url)
         upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor)
-        # if upload_embedding is None:
-        #     raise Exception("No face detected in uploaded image")
+
         image_name_without_extension = filename.split('.')[0]
 
         # Move image to a correct location (correct bucket)
@@ -277,11 +141,14 @@ def upload_to_db(filename):
         # Upload to firestore
         verified_ref = db.collection(u'verified_faces').document(person_name)
         verified_ref.set({'name': person_name, 'role': 'student'})
-        verified_ref.collection(u'faces')\
-            .document(image_name_without_extension).set({'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
-        return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url, "person_name": person_name}
+        verified_ref.collection(u'faces') \
+            .document(image_name_without_extension).set(
+            {'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
+        return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
+                "person_name": person_name}
     except Exception as e:
         return {"message": str(e)}, 400
+
 
 if __name__ == "__main__":
     initialize_model()
