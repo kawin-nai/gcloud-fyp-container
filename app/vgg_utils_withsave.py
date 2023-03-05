@@ -238,7 +238,7 @@ def get_embedding_from_url(url, detector, model):
         raise e
 
 
-def is_match(image_name, known_embedding, candidate_embedding, thresh=0.4):
+def is_match(image_name, known_embedding, candidate_embedding, thresh=0.3):
     # calculate distance between embeddings
     score = cosine(known_embedding, candidate_embedding)
     if score <= thresh:

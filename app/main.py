@@ -206,7 +206,7 @@ def predict_from_db():
         verified_faces_ref = db.collection(u'verified_faces')
         verified_faces = verified_faces_ref.stream()
 
-        all_distance = {}
+        all_distance = []
         for person in verified_faces:
             person_name = person.id
             person_distance = []
@@ -216,11 +216,18 @@ def predict_from_db():
                 raw_embedding = np.array(image.to_dict()['raw_embedding'])
                 score = is_match(image.to_dict()['image_name'], raw_embedding, input_embedding)
                 person_distance.append(score)
-            all_distance[person_name] = np.mean(person_distance)
-        top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
+            # Calculate the average distance for each person
+            person_object = {}
+            person_object['person_name'] = person_name
+            person_object['distance'] = np.mean(person_distance)
+            all_distance.append(person_object)
+        print('all_distance', all_distance)
+        top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
+        # top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
         verified = "False"
-        if float(top_ten[0][1]) < 0.4:
+        if float(top_ten[0]['distance']) < 0.3:
             verified = "True"
+        print(top_ten)
 
         return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
     except Exception as e:
@@ -268,7 +275,9 @@ def upload_to_db(filename):
         bucket.delete_blob(source_blob.name)
 
         # Upload to firestore
-        db.collection(u'verified_faces').document(person_name).collection(u'faces')\
+        verified_ref = db.collection(u'verified_faces').document(person_name)
+        verified_ref.set({'name': person_name, 'role': 'student'})
+        verified_ref.collection(u'faces')\
             .document(image_name_without_extension).set({'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url, "person_name": person_name}
     except Exception as e:
