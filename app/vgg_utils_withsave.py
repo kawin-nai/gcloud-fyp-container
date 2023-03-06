@@ -128,9 +128,10 @@ def get_embedding_from_url(url, detector, model):
         raise e
 
 
-def is_match(image_name, known_embedding, candidate_embedding, thresh=0.3):
+def is_match(image_name, known_embedding, candidate_embedding, thresh=0.8):
     # calculate distance between embeddings
-    score = cosine(known_embedding, candidate_embedding)
+    # score = cosine(known_embedding, candidate_embedding)
+    score = find_euclidean_distance(l2_normalize(known_embedding), l2_normalize(candidate_embedding))
     if score <= thresh:
         logging.debug('>face is a Match (%.3f <= %.3f) %s' % (score, thresh, image_name))
         logging.debug(candidate_embedding)
@@ -138,6 +139,16 @@ def is_match(image_name, known_embedding, candidate_embedding, thresh=0.3):
         logging.debug('>face is NOT a Match (%.3f > %.3f) %s' % (score, thresh, image_name))
     return score
 
+
+def find_euclidean_distance(source_representation, test_representation):
+    euclidean_distance = source_representation - test_representation
+    euclidean_distance = np.sum(np.multiply(euclidean_distance, euclidean_distance))
+    euclidean_distance = np.sqrt(euclidean_distance)
+    return euclidean_distance
+
+
+def l2_normalize(x):
+    return x / np.sqrt(np.sum(np.multiply(x, x)))
 
 def save_embedding(embeddings, filename):
     with open(filename, "wb") as f:

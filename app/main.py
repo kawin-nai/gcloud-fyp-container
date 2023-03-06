@@ -1,8 +1,8 @@
 from flask import Flask
 from vgg_utils_withsave import *
 from vgg_scratch import *
-from tensorflow.keras.models import Model
 from firebase_admin import credentials, storage, firestore
+from resnet_scratch import *
 import os
 import mtcnn
 import firebase_admin
@@ -29,6 +29,8 @@ def initialize_model():
     model = define_model()
     vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
+    resnet = RESNET50()
+    vgg_resnet = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
 
 
 @app.route('/verify/<filepath>', methods=['GET'])
@@ -105,7 +107,7 @@ def predict_from_db():
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
         verified = "False"
-        if float(top_ten[0]['distance']) < 0.3:
+        if float(top_ten[0]['distance']) < 0.8:
             verified = "True"
 
         return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
