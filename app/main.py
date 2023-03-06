@@ -106,7 +106,8 @@ def predict_from_db():
             person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
             person_faces = person_faces_ref.stream()
             for image in person_faces:
-                raw_embedding = np.array(image.to_dict()['raw_embedding'])
+                # raw_embedding = np.array(image.to_dict()['raw_embedding'])
+                raw_embedding = np.array(image.to_dict()['resnet_embedding'])
                 score = is_match(image.to_dict()['image_name'], raw_embedding, input_embedding)
                 person_distance.append(score)
 
@@ -156,7 +157,8 @@ def upload_to_db(filename):
         verified_ref.set({'name': person_name, 'role': 'student'})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
-            {'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
+            # {'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
+            {'image_name': filename, 'image_url': upload_url, 'resnet_embedding': upload_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
                 "person_name": person_name}
     except Exception as e:
