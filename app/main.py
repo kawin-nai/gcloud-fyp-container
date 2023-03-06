@@ -3,6 +3,7 @@ from vgg_utils_withsave import *
 from vgg_scratch import *
 from firebase_admin import credentials, storage, firestore
 from resnet_scratch import *
+# from keras_vggface.vggface import VGGFace
 import os
 import mtcnn
 import firebase_admin
@@ -26,18 +27,22 @@ verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
 def initialize_model():
     global vgg_descriptor
     global detector
-    model = define_model()
-    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
+    # model = define_model()
+    # vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
-    resnet = RESNET50()
-    vgg_resnet = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
+    resnet = RESNET50(input_shape=(224, 224, 3))
+    vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
+    # vggface_resnet = VGGFace(model='resnet50')
+
+    # get just the embeddings
+    # vgg_descriptor = Model(inputs=vggface_resnet.inputs, outputs=vggface_resnet.layers[-2].output)
 
 
 @app.route('/verify/<filepath>', methods=['GET'])
 def predict(filepath):
     try:
         input_img_path = os.path.join(input_path, filepath)
-        input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
+        input_embedding = get_embedding(input_img_path, detector, vgg_descriptor, save_to_file=False)
         # dnnFaceDetector = dlib.cnn_face_detection_model_v1("./app/weights/mmod_human_face_detector.dat")
         # mmod_embedding = get_embedding_mmod(input_img_path, dnnFaceDetector, vgg_descriptor)
         # print(mmod_embedding)
@@ -54,7 +59,7 @@ def predict(filepath):
                 if full_img_path[-3:] == "jpg":
                     images.append(full_img_path)
                 # Get embeddings
-            embeddings = get_embeddings(images, detector, vgg_descriptor)
+            embeddings = get_embeddings(images, detector, vgg_descriptor, read_from_file=False, save_to_file=False)
             if embeddings is None:
                 logging.debug("No faces detected")
                 continue
@@ -70,6 +75,12 @@ def predict(filepath):
         verified = "False"
         if float(top_ten[0][1]) < 0.4:
             verified = "True"
+
+        # Convert float to string
+        for i in range(len(top_ten)):
+            top_ten[i] = list(top_ten[i])
+            top_ten[i][1] = str(top_ten[i][1])
+            top_ten[i] = tuple(top_ten[i])
 
         return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
     except Exception as e:

@@ -1,11 +1,11 @@
-from keras.layers import Flatten, Dense, Input, GlobalAveragePooling2D, \
+from tensorflow.keras.layers import Flatten, Dense, Input, GlobalAveragePooling2D, \
     GlobalMaxPooling2D, Activation, Conv2D, MaxPooling2D, BatchNormalization, \
     AveragePooling2D
-from keras_applications.imagenet_utils import _obtain_input_shape
-from keras import backend as K
-from keras.engine.topology import get_source_inputs
-from keras.models import Model
-from keras import layers
+# from keras_applications.imagenet_utils import _obtain_input_shape
+from tensorflow.keras import backend as K
+# from tensorflow.keras.engine.topology import get_source_inputs
+from tensorflow.keras.models import Model
+from tensorflow.keras import layers
 
 
 def resnet_identity_block(input_tensor, kernel_size, filters, stage, block,
@@ -78,12 +78,12 @@ def RESNET50(include_top=True, weights='vggface',
              input_tensor=None, input_shape=None,
              pooling=None,
              classes=8631):
-    input_shape = _obtain_input_shape(input_shape,
-                                      default_size=224,
-                                      min_size=32,
-                                      data_format=K.image_data_format(),
-                                      require_flatten=include_top,
-                                      weights=weights)
+    # input_shape = _obtain_input_shape(input_shape,
+    #                                   default_size=224,
+    #                                   min_size=32,
+    #                                   data_format=K.image_data_format(),
+    #                                   require_flatten=include_top,
+    #                                   weights=weights)
 
     if input_tensor is None:
         img_input = Input(shape=input_shape)
@@ -137,10 +137,10 @@ def RESNET50(include_top=True, weights='vggface',
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
-    if input_tensor is not None:
-        inputs = get_source_inputs(input_tensor)
-    else:
-        inputs = img_input
+    # if input_tensor is not None:
+    #     inputs = get_source_inputs(input_tensor)
+    # else:
+    inputs = img_input
     # Create model.
     model = Model(inputs, x, name='vggface_resnet50')
 

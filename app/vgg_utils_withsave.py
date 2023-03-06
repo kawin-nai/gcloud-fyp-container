@@ -68,7 +68,7 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
                         file_embedding = np.load(f, allow_pickle=True)
                         embeddings.append(file_embedding)
                 except FileNotFoundError:
-                    face_embedding = get_embedding(file, detector, model)
+                    face_embedding = get_embedding(file, detector, model, save_to_file)
                     if face_embedding is not None:
                         embeddings.append(face_embedding)
                         if save_to_file:
@@ -77,7 +77,7 @@ def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file
                         logging.exception("Get embedding function return None", file)
                         raise Exception("Get embedding function return None")
             else:
-                face_embedding = get_embedding(file, detector, model)
+                face_embedding = get_embedding(file, detector, model, save_to_file)
                 if face_embedding is not None:
                     embeddings.append(face_embedding)
                     if save_to_file:
@@ -130,6 +130,7 @@ def get_embedding_from_url(url, detector, model):
 
 def is_match(image_name, known_embedding, candidate_embedding, thresh=0.8):
     # calculate distance between embeddings
+    # thresh = 0.3 or thresh = 0.4
     # score = cosine(known_embedding, candidate_embedding)
     score = find_euclidean_distance(l2_normalize(known_embedding), l2_normalize(candidate_embedding))
     if score <= thresh:
