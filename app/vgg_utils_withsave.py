@@ -1,5 +1,7 @@
 import logging
 import urllib
+
+import PIL.Image
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
@@ -14,6 +16,9 @@ def extract_face_from_url(url, detector, required_size=(224, 224)):
         img = Image.open(urllib.request.urlopen(url))
     except Exception as e:
         raise e
+    # Save image
+    img.save("test.jpg")
+
     # Rotate image
     img = np.array(img)
     rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)

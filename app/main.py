@@ -1,9 +1,10 @@
 from flask import Flask
+
 from vgg_utils_withsave import *
 from vgg_scratch import *
 from firebase_admin import credentials, storage, firestore
 from resnet_scratch import *
-# from keras_vggface.vggface import VGGFace
+from keras_vggface.vggface import VGGFace
 import os
 import mtcnn
 import firebase_admin
@@ -36,6 +37,8 @@ def initialize_model():
 
     # get just the embeddings
     # vgg_descriptor = Model(inputs=vggface_resnet.inputs, outputs=vggface_resnet.layers[-2].output)
+    # initialize vggface resnet50 to output just the embeddings
+    vgg_descriptor = VGGFace(model='senet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
 
 
 @app.route('/verify/<filepath>', methods=['GET'])
@@ -157,8 +160,8 @@ def upload_to_db(filename):
         verified_ref.set({'name': person_name, 'role': 'student'})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
-            # {'image_name': filename, 'image_url': upload_url, 'raw_embedding': upload_embedding.tolist()})
-            {'image_name': filename, 'image_url': upload_url, 'resnet_embedding': upload_embedding.tolist()})
+            # {'image_name': filename, 'image_url': copied_blob.public_url, 'raw_embedding': upload_embedding.tolist()})
+            {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
                 "person_name": person_name}
     except Exception as e:
@@ -167,4 +170,4 @@ def upload_to_db(filename):
 
 if __name__ == "__main__":
     initialize_model()
-    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 80)), use_reloader=False)
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 80)), use_reloader=False)
