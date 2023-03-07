@@ -10,6 +10,14 @@ from scipy.spatial.distance import cosine
 from tensorflow.keras.applications.imagenet_utils import preprocess_input
 
 
+def preprocess_input_v2(x):
+    x_temp = np.copy(x)
+    x_temp = x_temp[..., ::-1]
+    x_temp[..., 0] -= 91.4953
+    x_temp[..., 1] -= 103.8827
+    x_temp[..., 2] -= 131.0912
+    return x_temp
+
 def extract_face_from_url(url, detector, required_size=(224, 224)):
     try:
         # img = np.array(Image.open(urllib.request.urlopen(url)))
@@ -126,6 +134,7 @@ def get_embedding_from_url(url, detector, model):
         # prepare the face for the model, e.g. center pixels
         # samples = preprocess_input(samples, version=2)
         sample = preprocess_input(sample, data_format='channels_last')
+        samplev2 = preprocess_input_v2(sample)
         # perform prediction
         yhat = model.predict(sample)
         return yhat[0]

@@ -211,7 +211,7 @@ def SENET50(include_top=True, weights='vggface',
     #                       '`image_data_format="channels_last"` in '
     #                       'your Keras config '
     #                       'at ~/.keras/keras.json.')
-
-    model.load_weights('./app/weights/vggface_tf_resnet50.h5')
+    # model.summary()
+    model.load_weights('./app/weights/vggface_tf_senet50.h5')
 
     return model

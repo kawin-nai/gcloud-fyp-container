@@ -1,10 +1,11 @@
 from flask import Flask
 
+from app.senet_scratch import SENET50
 from vgg_utils_withsave import *
 from vgg_scratch import *
 from firebase_admin import credentials, storage, firestore
 from resnet_scratch import *
-from keras_vggface.vggface import VGGFace
+# from keras_vggface.vggface import VGGFace
 import os
 import mtcnn
 import firebase_admin
@@ -31,14 +32,17 @@ def initialize_model():
     # model = define_model()
     # vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
-    resnet = RESNET50(input_shape=(224, 224, 3))
-    vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
+    # resnet = RESNET50(input_shape=(224, 224, 3))
+    # vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
     # vggface_resnet = VGGFace(model='resnet50')
 
     # get just the embeddings
     # vgg_descriptor = Model(inputs=vggface_resnet.inputs, outputs=vggface_resnet.layers[-2].output)
     # initialize vggface resnet50 to output just the embeddings
-    vgg_descriptor = VGGFace(model='senet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+    # vgg_descriptor = VGGFace(model='senet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+    model = SENET50(input_shape=(224, 224, 3))
+    # model.summary()
+    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
 
 
 @app.route('/verify/<filepath>', methods=['GET'])
@@ -98,6 +102,9 @@ def predict_from_db():
         input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor)
         if input_embedding is None:
             raise Exception("No face detected in input image")
+        # Save input embedding to local json file
+        np.save(os.path.join(input_path, "input_embedding_v2.npy"), input_embedding)
+
 
         verified_faces_ref = db.collection(u'verified_faces')
         verified_faces = verified_faces_ref.stream()
@@ -110,7 +117,7 @@ def predict_from_db():
             person_faces = person_faces_ref.stream()
             for image in person_faces:
                 # raw_embedding = np.array(image.to_dict()['raw_embedding'])
-                raw_embedding = np.array(image.to_dict()['resnet_embedding'])
+                raw_embedding = np.array(image.to_dict()['senet_embedding'])
                 score = is_match(image.to_dict()['image_name'], raw_embedding, input_embedding)
                 person_distance.append(score)
 
@@ -161,7 +168,7 @@ def upload_to_db(filename):
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
             # {'image_name': filename, 'image_url': copied_blob.public_url, 'raw_embedding': upload_embedding.tolist()})
-            {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist()})
+            {'image_name': filename, 'image_url': copied_blob.public_url, 'senet_embedding': upload_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
                 "person_name": person_name}
     except Exception as e:
