@@ -127,10 +127,10 @@ def predict_from_db():
             person_object['distance'] = np.mean(person_distance)
             person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
-        top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
+        top_ten = sorted(all_distance, key=lambda x: x['distance_senet'])[:10]
 
         verified = "False"
-        if float(top_ten[0]['distance']) < 0.8:
+        if float(top_ten[0]['distance_senet']) < 0.8:
             verified = "True"
 
         return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
