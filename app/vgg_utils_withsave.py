@@ -18,6 +18,7 @@ def preprocess_input_v2(x):
     x_temp[..., 2] -= 131.0912
     return x_temp
 
+
 def extract_face_from_url(url, detector, required_size=(224, 224)):
     try:
         # img = np.array(Image.open(urllib.request.urlopen(url)))
@@ -32,6 +33,7 @@ def extract_face_from_url(url, detector, required_size=(224, 224)):
     rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
     faces = detector.detect_faces(rotated_img)
+    # faces = detector.detect_faces(img)
     if not faces:
         raise Exception("No face detected in extract_face")
     # extract details of the largest face
@@ -112,7 +114,8 @@ def get_embedding(filename, detector, model, save_to_file=True):
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels
         # samples = preprocess_input(samples, version=2)
-        sample = preprocess_input(sample, data_format='channels_last')
+        # sample = preprocess_input(sample, data_format='channels_last')
+        sample = preprocess_input_v2(sample)
         # create a vggface model
         # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
         # perform prediction
@@ -125,16 +128,17 @@ def get_embedding(filename, detector, model, save_to_file=True):
         return None
 
 
-def get_embedding_from_url(url, detector, model):
+def get_embedding_from_url(url, detector, model, version=2):
     try:
         # extract largest face in each filename
         face = [extract_face_from_url(url, detector)]
         # convert into an array of samples
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels
-        # samples = preprocess_input(samples, version=2)
-        sample = preprocess_input(sample, data_format='channels_last')
-        samplev2 = preprocess_input_v2(sample)
+        if version == 1:
+            sample = preprocess_input(sample, data_format='channels_last')
+        else:
+            sample = preprocess_input_v2(sample)
         # perform prediction
         yhat = model.predict(sample)
         return yhat[0]
@@ -164,6 +168,7 @@ def find_euclidean_distance(source_representation, test_representation):
 
 def l2_normalize(x):
     return x / np.sqrt(np.sum(np.multiply(x, x)))
+
 
 def save_embedding(embeddings, filename):
     with open(filename, "wb") as f:

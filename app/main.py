@@ -1,11 +1,10 @@
 from flask import Flask
 
-from app.senet_scratch import SENET50
+from senet_scratch import SENET50
 from vgg_utils_withsave import *
 from vgg_scratch import *
 from firebase_admin import credentials, storage, firestore
 from resnet_scratch import *
-# from keras_vggface.vggface import VGGFace
 import os
 import mtcnn
 import firebase_admin
@@ -19,6 +18,7 @@ bucket = storage.bucket(name=str(os.environ.get('BUCKET_NAME')), app=default_app
 logging.getLogger().setLevel(logging.INFO)
 
 vgg_descriptor = None
+vgg_descriptor_senet = None
 detector = None
 
 mnt_dir = os.environ.get('MNT_DIR', 'mnt')
@@ -28,21 +28,16 @@ verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
 
 def initialize_model():
     global vgg_descriptor
+    global vgg_descriptor_senet
     global detector
     # model = define_model()
     # vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
-    # resnet = RESNET50(input_shape=(224, 224, 3))
-    # vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
-    # vggface_resnet = VGGFace(model='resnet50')
+    resnet = RESNET50(input_shape=(224, 224, 3))
+    vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
 
-    # get just the embeddings
-    # vgg_descriptor = Model(inputs=vggface_resnet.inputs, outputs=vggface_resnet.layers[-2].output)
-    # initialize vggface resnet50 to output just the embeddings
-    # vgg_descriptor = VGGFace(model='senet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
     model = SENET50(input_shape=(224, 224, 3))
-    # model.summary()
-    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
+    vgg_descriptor_senet = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
 
 
 @app.route('/verify/<filepath>', methods=['GET'])
@@ -99,11 +94,12 @@ def predict_from_db():
     try:
         input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
         logging.info(input_url)
-        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor)
+        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor, version=1)
+        input_embedding_senet = get_embedding_from_url(input_url, detector, vgg_descriptor_senet, version=2)
         if input_embedding is None:
             raise Exception("No face detected in input image")
         # Save input embedding to local json file
-        np.save(os.path.join(input_path, "input_embedding_v2.npy"), input_embedding)
+        # np.save(os.path.join(input_path, "input_embedding_v2.npy"), input_embedding)
 
 
         verified_faces_ref = db.collection(u'verified_faces')
@@ -113,18 +109,23 @@ def predict_from_db():
         for person in verified_faces:
             person_name = person.id
             person_distance = []
+            person_distance_senet = []
             person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
             person_faces = person_faces_ref.stream()
             for image in person_faces:
                 # raw_embedding = np.array(image.to_dict()['raw_embedding'])
-                raw_embedding = np.array(image.to_dict()['senet_embedding'])
-                score = is_match(image.to_dict()['image_name'], raw_embedding, input_embedding)
+                resnet_embedding = np.array(image.to_dict()['resnet_embedding'])
+                senet_embedding = np.array(image.to_dict()['senet_embedding'])
+                score = is_match(image.to_dict()['image_name'], resnet_embedding, input_embedding)
+                score_senet = is_match(image.to_dict()['image_name'], senet_embedding, input_embedding_senet)
                 person_distance.append(score)
+                person_distance_senet.append(score_senet)
 
             # Calculate the average distance for each person
             person_object = dict()
             person_object['person_name'] = person_name
             person_object['distance'] = np.mean(person_distance)
+            person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
@@ -151,6 +152,7 @@ def upload_to_db(filename):
         upload_url = upload_dict['image_url']
         logging.info(upload_url)
         upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor)
+        senet_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor_senet, version=2)
 
         image_name_without_extension = filename.split('.')[0]
 
@@ -168,7 +170,7 @@ def upload_to_db(filename):
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
             # {'image_name': filename, 'image_url': copied_blob.public_url, 'raw_embedding': upload_embedding.tolist()})
-            {'image_name': filename, 'image_url': copied_blob.public_url, 'senet_embedding': upload_embedding.tolist()})
+            {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist(), 'senet_embedding': senet_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
                 "person_name": person_name}
     except Exception as e:
