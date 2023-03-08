@@ -26,11 +26,12 @@ def extract_face_from_url(url, detector, required_size=(224, 224)):
     except Exception as e:
         raise e
     # Save image
-    img.save("test.jpg")
+    # img.save("test.jpg")
 
     # Rotate image
     img = np.array(img)
     rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    # rotated_img_real.save("test_rotated.jpg")
 
     faces = detector.detect_faces(rotated_img)
     # faces = detector.detect_faces(img)
@@ -41,11 +42,12 @@ def extract_face_from_url(url, detector, required_size=(224, 224)):
     x1, y1 = abs(x1), abs(y1)
     x2, y2 = x1 + width, y1 + height
     # extract the face
-    face_boundary = img[y1:y2, x1:x2]
+    face_boundary = rotated_img[y1:y2, x1:x2]
     # resize pixels to the model size
     face_image = Image.fromarray(face_boundary)
     face_image = face_image.resize(required_size)
     face_array = np.asarray(face_image)
+    # face_image.save("test_face.jpg")
     return face_array
 
 
