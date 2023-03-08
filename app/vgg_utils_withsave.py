@@ -149,8 +149,8 @@ def get_embedding_from_url(url, detector, model, version=2):
 def is_match(image_name, known_embedding, candidate_embedding, thresh=0.8):
     # calculate distance between embeddings
     # thresh = 0.3 or thresh = 0.4
-    # score = cosine(known_embedding, candidate_embedding)
-    score = find_euclidean_distance(l2_normalize(known_embedding), l2_normalize(candidate_embedding))
+    score = cosine(known_embedding, candidate_embedding)
+    # score = find_euclidean_distance(l2_normalize(known_embedding), l2_normalize(candidate_embedding))
     if score <= thresh:
         logging.debug('>face is a Match (%.3f <= %.3f) %s' % (score, thresh, image_name))
         logging.debug(candidate_embedding)

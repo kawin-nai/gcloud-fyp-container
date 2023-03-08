@@ -126,14 +126,16 @@ def RESNET50(include_top=True, weights='vggface',
 
     x = AveragePooling2D((7, 7), name='avg_pool')(x)
 
-    if include_top:
-        x = Flatten()(x)
-        x = Dense(classes, activation='softmax', name='classifier')(x)
-    else:
-        if pooling == 'avg':
-            x = GlobalAveragePooling2D()(x)
-        elif pooling == 'max':
-            x = GlobalMaxPooling2D()(x)
+    # if include_top:
+    #     x = Flatten()(x)
+    #     x = Dense(classes, activation='softmax', name='classifier')(x)
+    # else:
+    #     if pooling == 'avg':
+    #         x = GlobalAveragePooling2D()(x)
+    #     elif pooling == 'max':
+    #         x = GlobalMaxPooling2D()(x)
+
+    x = GlobalAveragePooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
@@ -145,6 +147,7 @@ def RESNET50(include_top=True, weights='vggface',
     model = Model(inputs, x, name='vggface_resnet50')
 
     # load weights
-    model.load_weights('./app/weights/vggface_tf_resnet50.h5')
+    # model.load_weights('./app/weights/vggface_tf_resnet50.h5')
+    model.load_weights('./app/weights/vggface_tf_notop_resnet50.h5')
 
     return model
