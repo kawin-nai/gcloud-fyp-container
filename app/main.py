@@ -33,8 +33,9 @@ def initialize_model():
     # model = define_model()
     # vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
-    resnet = RESNET50(input_shape=(224, 224, 3))
-    vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-2].output)
+    vgg_descriptor = RESNET50(input_shape=(224, 224, 3))
+    # vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-1].output)
+    vgg_descriptor.summary()
 
     model = SENET50(input_shape=(224, 224, 3))
     vgg_descriptor_senet = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)

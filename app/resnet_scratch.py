@@ -136,6 +136,7 @@ def RESNET50(include_top=True, weights='vggface',
     #         x = GlobalMaxPooling2D()(x)
 
     x = GlobalAveragePooling2D()(x)
+    # x = Flatten()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
