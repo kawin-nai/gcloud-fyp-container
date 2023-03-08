@@ -35,7 +35,7 @@ def initialize_model():
     detector = mtcnn.MTCNN()
     vgg_descriptor = RESNET50(input_shape=(224, 224, 3))
     # vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-1].output)
-    vgg_descriptor.summary()
+    # vgg_descriptor.summary()
 
     model = SENET50(input_shape=(224, 224, 3))
     vgg_descriptor_senet = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
@@ -128,10 +128,10 @@ def predict_from_db():
             person_object['distance'] = np.mean(person_distance)
             person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
-        top_ten = sorted(all_distance, key=lambda x: x['distance_senet'])[:10]
+        top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
         verified = "False"
-        if float(top_ten[0]['distance_senet']) < 0.8:
+        if float(top_ten[0]['distance']) < 0.5:
             verified = "True"
 
         return {"message": "Verification Success", "content": top_ten, "verified": verified}, 200
