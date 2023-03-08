@@ -94,7 +94,7 @@ def predict_from_db():
     try:
         input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
         logging.info(input_url)
-        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor, version=1)
+        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor, version=2)
         input_embedding_senet = get_embedding_from_url(input_url, detector, vgg_descriptor_senet, version=2)
         if input_embedding is None:
             raise Exception("No face detected in input image")
@@ -151,7 +151,7 @@ def upload_to_db(filename):
         # logging.debug(upload_dict)
         upload_url = upload_dict['image_url']
         logging.info(upload_url)
-        upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor)
+        upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor, version=2)
         senet_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor_senet, version=2)
 
         image_name_without_extension = filename.split('.')[0]
