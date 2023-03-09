@@ -18,7 +18,7 @@ bucket = storage.bucket(name=str(os.environ.get('BUCKET_NAME')), app=default_app
 logging.getLogger().setLevel(logging.INFO)
 
 vgg_descriptor = None
-vgg_descriptor_senet = None
+# vgg_descriptor_senet = None
 detector = None
 
 mnt_dir = os.environ.get('MNT_DIR', 'mnt')
@@ -28,7 +28,7 @@ verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
 
 def initialize_model():
     global vgg_descriptor
-    global vgg_descriptor_senet
+    # global vgg_descriptor_senet
     global detector
     # model = define_model()
     # vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
@@ -37,8 +37,8 @@ def initialize_model():
     # vgg_descriptor = Model(inputs=resnet.layers[0].input, outputs=resnet.layers[-1].output)
     # vgg_descriptor.summary()
 
-    model = SENET50(input_shape=(224, 224, 3))
-    vgg_descriptor_senet = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
+    # model = SENET50(input_shape=(224, 224, 3))
+    # vgg_descriptor_senet = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
 
 
 @app.route('/verify/<filepath>', methods=['GET'])
@@ -99,7 +99,7 @@ def predict_from_db():
         input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
         logging.info(input_url)
         input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor, version=2, camera=camera_choice)
-        input_embedding_senet = get_embedding_from_url(input_url, detector, vgg_descriptor_senet, version=2, camera=camera_choice)
+        # input_embedding_senet = get_embedding_from_url(input_url, detector, vgg_descriptor_senet, version=2, camera=camera_choice)
         if input_embedding is None:
             raise Exception("No face detected in input image")
         # Save input embedding to local json file
@@ -113,7 +113,7 @@ def predict_from_db():
         for person in verified_faces:
             person_name = person.id
             person_distance = []
-            person_distance_senet = []
+            # person_distance_senet = []
             person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
             person_faces = person_faces_ref.stream()
             for image in person_faces:
@@ -121,15 +121,15 @@ def predict_from_db():
                 resnet_embedding = np.array(image.to_dict()['resnet_embedding'])
                 senet_embedding = np.array(image.to_dict()['senet_embedding'])
                 score = is_match(image.to_dict()['image_name'], resnet_embedding, input_embedding)
-                score_senet = is_match(image.to_dict()['image_name'], senet_embedding, input_embedding_senet)
+                # score_senet = is_match(image.to_dict()['image_name'], senet_embedding, input_embedding_senet)
                 person_distance.append(score)
-                person_distance_senet.append(score_senet)
+                # person_distance_senet.append(score_senet)
 
             # Calculate the average distance for each person
             person_object = dict()
             person_object['person_name'] = person_name
             person_object['distance'] = np.mean(person_distance)
-            person_object['distance_senet'] = np.mean(person_distance_senet)
+            # person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
@@ -158,7 +158,7 @@ def upload_to_db(filename):
         upload_url = upload_dict['image_url']
         logging.info(upload_url)
         upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor, version=2, camera=camera_choice)
-        senet_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor_senet, version=2, camera=camera_choice)
+        # senet_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor_senet, version=2, camera=camera_choice)
 
         image_name_without_extension = filename.split('.')[0]
 
@@ -175,8 +175,8 @@ def upload_to_db(filename):
         verified_ref.set({'name': person_name, 'role': 'student'})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
-            # {'image_name': filename, 'image_url': copied_blob.public_url, 'raw_embedding': upload_embedding.tolist()})
-            {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist(), 'senet_embedding': senet_embedding.tolist()})
+            {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist()})
+            # {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist(), 'senet_embedding': senet_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
                 "person_name": person_name}
     except Exception as e:
