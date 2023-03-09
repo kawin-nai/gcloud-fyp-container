@@ -117,10 +117,11 @@ def predict_from_db():
             person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
             person_faces = person_faces_ref.stream()
             for image in person_faces:
-                # raw_embedding = np.array(image.to_dict()['raw_embedding'])
-                resnet_embedding = np.array(image.to_dict()['resnet_embedding'])
-                senet_embedding = np.array(image.to_dict()['senet_embedding'])
-                score = is_match(image.to_dict()['image_name'], resnet_embedding, input_embedding)
+                image_dict = image.to_dict()
+                # Get embeddings
+                resnet_embedding = np.array(image_dict['resnet_embedding'])
+                # senet_embedding = np.array(image.to_dict()['senet_embedding'])
+                score = is_match(image_dict['image_name'], resnet_embedding, input_embedding)
                 # score_senet = is_match(image.to_dict()['image_name'], senet_embedding, input_embedding_senet)
                 person_distance.append(score)
                 # person_distance_senet.append(score_senet)
