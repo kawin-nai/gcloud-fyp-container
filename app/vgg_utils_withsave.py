@@ -19,19 +19,23 @@ def preprocess_input_v2(x):
     return x_temp
 
 
-def extract_face_from_url(url, detector, required_size=(224, 224)):
+def extract_face_from_url(url, detector, camera, required_size=(224, 224)):
     try:
         # img = np.array(Image.open(urllib.request.urlopen(url)))
         img = Image.open(urllib.request.urlopen(url))
     except Exception as e:
         raise e
     # Save image
-    # img.save("test.jpg")
+    img.save("test3.jpg")
 
     # Rotate image
     img = np.array(img)
-    rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    # rotated_img_real.save("test_rotated.jpg")
+    if camera == 'front':
+        rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    else:
+        rotated_img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+    rotated_img_real = Image.fromarray(rotated_img)
+    rotated_img_real.save("test_rotated3.jpg")
 
     faces = detector.detect_faces(rotated_img)
     # faces = detector.detect_faces(img)
@@ -130,10 +134,10 @@ def get_embedding(filename, detector, model, save_to_file=True):
         return None
 
 
-def get_embedding_from_url(url, detector, model, version=2):
+def get_embedding_from_url(url, detector, model, version=2, camera='front'):
     try:
         # extract largest face in each filename
-        face = [extract_face_from_url(url, detector)]
+        face = [extract_face_from_url(url, detector, camera=camera)]
         # convert into an array of samples
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels

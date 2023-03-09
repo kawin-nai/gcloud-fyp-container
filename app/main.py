@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 
 from senet_scratch import SENET50
 from vgg_utils_withsave import *
@@ -93,10 +93,13 @@ def predict(filepath):
 @app.route('/verifyfromdb', methods=['GET'])
 def predict_from_db():
     try:
+        # print(request)
+        args = request.args
+        camera_choice = args.get('camera')
         input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
         logging.info(input_url)
-        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor, version=2)
-        input_embedding_senet = get_embedding_from_url(input_url, detector, vgg_descriptor_senet, version=2)
+        input_embedding = get_embedding_from_url(input_url, detector, vgg_descriptor, version=2, camera=camera_choice)
+        input_embedding_senet = get_embedding_from_url(input_url, detector, vgg_descriptor_senet, version=2, camera=camera_choice)
         if input_embedding is None:
             raise Exception("No face detected in input image")
         # Save input embedding to local json file
@@ -142,6 +145,8 @@ def predict_from_db():
 @app.route('/uploadtodb/<filename>', methods=['POST'])
 def upload_to_db(filename):
     try:
+        args = request.args
+        camera_choice = args.get('camera')
         # Image name format = (Lastname_Firstname_Datetime).jpg
         filename_fragment = filename.split('_')
 
@@ -152,8 +157,8 @@ def upload_to_db(filename):
         # logging.debug(upload_dict)
         upload_url = upload_dict['image_url']
         logging.info(upload_url)
-        upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor, version=2)
-        senet_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor_senet, version=2)
+        upload_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor, version=2, camera=camera_choice)
+        senet_embedding = get_embedding_from_url(upload_url, detector, vgg_descriptor_senet, version=2, camera=camera_choice)
 
         image_name_without_extension = filename.split('.')[0]
 
