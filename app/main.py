@@ -105,19 +105,22 @@ def predict_from_db():
         # Save input embedding to local json file
         # np.save(os.path.join(input_path, "input_embedding_v2.npy"), input_embedding)
 
-
         verified_faces_ref = db.collection(u'verified_faces')
         verified_faces = verified_faces_ref.stream()
 
         all_distance = []
         for person in verified_faces:
             person_name = person.id
+            person_role = person.to_dict()['role']
             person_distance = []
             # person_distance_senet = []
             person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
             person_faces = person_faces_ref.stream()
-            for image in person_faces:
+            representative_url = None
+            for index, image in enumerate(person_faces):
                 image_dict = image.to_dict()
+                if index == 0:
+                    representative_url = image_dict['image_url']
                 # Get embeddings
                 resnet_embedding = np.array(image_dict['resnet_embedding'])
                 # senet_embedding = np.array(image.to_dict()['senet_embedding'])
@@ -129,7 +132,9 @@ def predict_from_db():
             # Calculate the average distance for each person
             person_object = dict()
             person_object['person_name'] = person_name
+            person_object['role'] = person_role
             person_object['distance'] = np.mean(person_distance)
+            person_object['face_url'] = representative_url
             # person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
@@ -176,8 +181,9 @@ def upload_to_db(filename):
         verified_ref.set({'name': person_name, 'role': 'student'})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
-            {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist()})
-            # {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist(), 'senet_embedding': senet_embedding.tolist()})
+            {'image_name': filename, 'image_url': copied_blob.public_url,
+             'resnet_embedding': upload_embedding.tolist()})
+        # {'image_name': filename, 'image_url': copied_blob.public_url, 'resnet_embedding': upload_embedding.tolist(), 'senet_embedding': senet_embedding.tolist()})
         return {"message": "Upload success", "image_name": filename, 'image_url': copied_blob.public_url,
                 "person_name": person_name}
     except Exception as e:
