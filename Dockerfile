@@ -8,7 +8,7 @@ ENV BUCKET_NAME fyptest-5e73d.appspot.com
 
 COPY requirements.txt .
 
-COPY fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json .
+COPY fyptest-5e73d-7efb2b844c59.json .
 
 # Install system dependencies
 RUN set -e; \
@@ -34,7 +34,7 @@ RUN pip install --upgrade pip
 
 RUN pip install --default-timeout=100 -r requirements.txt
 
-ENV GOOGLE_APPLICATION_CREDENTIALS fyptest-5e73d-firebase-adminsdk-8zrex-99bb1b9dcc.json
+ENV GOOGLE_APPLICATION_CREDENTIALS fyptest-5e73d-7efb2b844c59.json
 
 COPY ./app ./app
 
