@@ -90,6 +90,7 @@ def predict(filepath):
         return {"message": str(e)}, 400
 
 
+# TODO: Change logic to get representative embedding from db
 @app.route('/verifyfromdb', methods=['GET'])
 def predict_from_db():
     try:
@@ -148,6 +149,8 @@ def predict_from_db():
         return {"message": str(e)}, 400
 
 
+# TODO: add representative embedding to db -> done
+# TODO: verify that it's correct
 @app.route('/uploadtodb/<filename>', methods=['POST'])
 def upload_to_db(filename):
     try:
@@ -179,7 +182,18 @@ def upload_to_db(filename):
 
         # Upload to firestore
         verified_ref = db.collection(u'verified_faces').document(person_name)
-        verified_ref.set({'name': person_name, 'role': role})
+        # if this document doesn't exist
+        if not verified_ref.get().exists:
+            verified_ref.set({'name': person_name, 'role': role, 'embedding_count': 1, 'representative_embedding': upload_embedding.tolist()})
+        else:
+            # Get current representative embedding
+            representative_embedding = np.array(verified_ref.get().to_dict()['representative_embedding'])
+            # Get current embedding count
+            embedding_count = verified_ref.get().to_dict()['embedding_count']
+            # Calculate new representative embedding
+            new_representative_embedding = (representative_embedding * embedding_count + upload_embedding) / (embedding_count + 1)
+            # Update representative embedding and embedding count
+            verified_ref.update({'representative_embedding': new_representative_embedding.tolist(), 'embedding_count': embedding_count + 1})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
             {'image_name': filename, 'image_url': copied_blob.public_url,
