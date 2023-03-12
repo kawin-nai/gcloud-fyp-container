@@ -153,6 +153,7 @@ def upload_to_db(filename):
     try:
         args = request.args
         camera_choice = args.get('camera')
+        role = args.get('role')
         # Image name format = (Lastname_Firstname_Datetime).jpg
         filename_fragment = filename.split('_')
 
@@ -178,7 +179,7 @@ def upload_to_db(filename):
 
         # Upload to firestore
         verified_ref = db.collection(u'verified_faces').document(person_name)
-        verified_ref.set({'name': person_name, 'role': 'student'})
+        verified_ref.set({'name': person_name, 'role': role})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
             {'image_name': filename, 'image_url': copied_blob.public_url,
