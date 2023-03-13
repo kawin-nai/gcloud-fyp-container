@@ -112,32 +112,42 @@ def predict_from_db():
         all_distance = []
         for person in verified_faces:
             person_name = person.id
-            person_role = person.to_dict()['role']
+            person_dict = person.to_dict()
+            person_role = person_dict['role']
             person_distance = []
             # person_distance_senet = []
             person_faces_ref = verified_faces_ref.document(person_name).collection(u'faces')
             person_faces = person_faces_ref.stream()
             representative_url = None
-            for index, image in enumerate(person_faces):
-                image_dict = image.to_dict()
-                if index == 0:
-                    representative_url = image_dict['image_url']
-                # Get embeddings
-                resnet_embedding = np.array(image_dict['resnet_embedding'])
-                # senet_embedding = np.array(image.to_dict()['senet_embedding'])
-                score = is_match(image_dict['image_name'], resnet_embedding, input_embedding)
-                # score_senet = is_match(image.to_dict()['image_name'], senet_embedding, input_embedding_senet)
+            if 'representative_embedding' in person_dict:
+                representative_embedding = person_dict['representative_embedding']
+                representative_embedding = np.array(representative_embedding)
+                score = is_match("representative", representative_embedding, input_embedding)
                 person_distance.append(score)
-                # person_distance_senet.append(score_senet)
+                representative_url = person_faces_ref.get()[0].to_dict()['image_url']
+            else:
+                for index, image in enumerate(person_faces):
+                    image_dict = image.to_dict()
+                    if index == 0:
+                        representative_url = image_dict['image_url']
+                    # Get embeddings
+                    resnet_embedding = np.array(image_dict['resnet_embedding'])
+                    # senet_embedding = np.array(image.to_dict()['senet_embedding'])
+                    score = is_match(image_dict['image_name'], resnet_embedding, input_embedding)
+                    # score_senet = is_match(image.to_dict()['image_name'], senet_embedding, input_embedding_senet)
+                    person_distance.append(score)
+                    # person_distance_senet.append(score_senet)
 
             # Calculate the average distance for each person
             person_object = dict()
             person_object['person_name'] = person_name
             person_object['role'] = person_role
             person_object['distance'] = np.mean(person_distance)
+            # person_object['distance'] = score
             person_object['face_url'] = representative_url
             # person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
+        print(all_distance)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
         verified = "False"
@@ -191,7 +201,7 @@ def upload_to_db(filename):
             # Get current embedding count
             embedding_count = verified_ref.get().to_dict()['embedding_count']
             # Calculate new representative embedding
-            new_representative_embedding = (representative_embedding * embedding_count + upload_embedding) / (embedding_count + 1)
+            new_representative_embedding = representative_embedding + (upload_embedding - representative_embedding) / (embedding_count + 1)
             # Update representative embedding and embedding count
             verified_ref.update({'representative_embedding': new_representative_embedding.tolist(), 'embedding_count': embedding_count + 1})
         verified_ref.collection(u'faces') \
