@@ -124,7 +124,7 @@ def predict_from_db():
                 representative_embedding = np.array(representative_embedding)
                 score = is_match("representative", representative_embedding, input_embedding)
                 person_distance.append(score)
-                representative_url = person_faces_ref.get()[0].to_dict()['image_url']
+                representative_url = person_dict['representative_url']
             else:
                 for index, image in enumerate(person_faces):
                     image_dict = image.to_dict()
@@ -194,7 +194,9 @@ def upload_to_db(filename):
         verified_ref = db.collection(u'verified_faces').document(person_name)
         # if this document doesn't exist
         if not verified_ref.get().exists:
-            verified_ref.set({'name': person_name, 'role': role, 'embedding_count': 1, 'representative_embedding': upload_embedding.tolist()})
+            verified_ref.set({'name': person_name, 'role': role, 'embedding_count': 1,
+                              'representative_embedding': upload_embedding.tolist(),
+                              'representative_url': copied_blob.public_url})
         else:
             # Get current representative embedding
             representative_embedding = np.array(verified_ref.get().to_dict()['representative_embedding'])
@@ -203,7 +205,9 @@ def upload_to_db(filename):
             # Calculate new representative embedding
             new_representative_embedding = representative_embedding + (upload_embedding - representative_embedding) / (embedding_count + 1)
             # Update representative embedding and embedding count
-            verified_ref.update({'representative_embedding': new_representative_embedding.tolist(), 'embedding_count': embedding_count + 1})
+            verified_ref.update({'representative_embedding': new_representative_embedding.tolist(),
+                                 'embedding_count': embedding_count + 1,
+                                 'representative_url': copied_blob.public_url})
         verified_ref.collection(u'faces') \
             .document(image_name_without_extension).set(
             {'image_name': filename, 'image_url': copied_blob.public_url,
