@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from PIL import Image
+from matplotlib.patches import Rectangle
 from scipy.spatial.distance import cosine
 from tensorflow.keras.applications.imagenet_utils import preprocess_input
 
@@ -50,6 +51,8 @@ def extract_face_from_url(url, detector, camera, required_size=(224, 224)):
     # resize pixels to the model size
     face_image = Image.fromarray(face_boundary)
     face_image = face_image.resize(required_size)
+    # plt.imshow(face_image)
+    # plt.show()
     face_array = np.asarray(face_image)
     # face_image.save("test_face.jpg")
     return face_array
