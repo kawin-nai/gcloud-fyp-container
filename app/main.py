@@ -40,6 +40,10 @@ def initialize_model():
     # model = SENET50(input_shape=(224, 224, 3))
     # vgg_descriptor_senet = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
 
+@app.route('/')
+def index():
+    return 'Welcome to the face recognition API!'
+
 
 @app.route('/verify/<filepath>', methods=['GET'])
 def predict(filepath):
