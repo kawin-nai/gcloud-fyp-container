@@ -150,7 +150,7 @@ def predict_from_db():
             person_object['face_url'] = representative_url
             # person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
-        print(all_distance)
+        # print(all_distance)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
         verified = "False"
@@ -168,6 +168,7 @@ def predict_from_post():
         # print(request)
         args = request.args
         camera_choice = args.get('camera')
+        print(camera_choice)
         file = request.files['image']
         # input_url = db.collection(u'input_faces').document(u'input').get().to_dict()['image_url']
         # logging.info(input_url)
@@ -219,7 +220,7 @@ def predict_from_post():
             person_object['face_url'] = representative_url
             # person_object['distance_senet'] = np.mean(person_distance_senet)
             all_distance.append(person_object)
-        print(all_distance)
+        # print(all_distance)
         top_ten = sorted(all_distance, key=lambda x: x['distance'])[:10]
 
         verified = "False"
