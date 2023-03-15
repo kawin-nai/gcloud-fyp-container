@@ -1,4 +1,4 @@
-from main import app
+from app.main import app
 import unittest
 
 
@@ -42,5 +42,5 @@ class FlaskTest(unittest.TestCase):
         self.assertEqual(statuscode, 405)
 
 
-if __name__ == '__main__':
+def endpoint_test():
     unittest.main()

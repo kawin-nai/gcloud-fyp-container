@@ -27,10 +27,49 @@ def extract_face_from_url(url, detector, camera, required_size=(224, 224)):
     except Exception as e:
         raise e
     # Save image
+    # img.save("test3.jpg")
+
+    # Rotate image
+    img = np.array(img)
+    if camera == 'front':
+        rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    else:
+        rotated_img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+    rotated_img_real = Image.fromarray(rotated_img)
+    # rotated_img_real.save("test_rotated3.jpg")
+
+    faces = detector.detect_faces(rotated_img)
+    # faces = detector.detect_faces(img)
+    if not faces:
+        raise Exception("No face detected in extract_face")
+    # extract details of the largest face
+    x1, y1, width, height = faces[0]['box']
+    x1, y1 = abs(x1), abs(y1)
+    x2, y2 = x1 + width, y1 + height
+    # extract the face
+    face_boundary = rotated_img[y1:y2, x1:x2]
+    # resize pixels to the model size
+    face_image = Image.fromarray(face_boundary)
+    face_image = face_image.resize(required_size)
+    # plt.imshow(face_image)
+    # plt.show()
+    face_array = np.asarray(face_image)
+    # face_image.save("test_face.jpg")
+    return face_array
+
+
+def extract_face_from_post(filestream, detector, camera, required_size=(224, 224)):
+    try:
+        # img = np.array(Image.open(urllib.request.urlopen(url)))
+        img = Image.open(filestream.stream)
+    except Exception as e:
+        raise e
+    # Save image
     img.save("test3.jpg")
 
     # Rotate image
     img = np.array(img)
+    rotated_img = img
     if camera == 'front':
         rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
     else:
@@ -141,6 +180,23 @@ def get_embedding_from_url(url, detector, model, version=2, camera='front'):
     try:
         # extract largest face in each filename
         face = [extract_face_from_url(url, detector, camera=camera)]
+        # convert into an array of samples
+        sample = np.asarray(face, 'float32')
+        # prepare the face for the model, e.g. center pixels
+        if version == 1:
+            sample = preprocess_input(sample, data_format='channels_last')
+        else:
+            sample = preprocess_input_v2(sample)
+        # perform prediction
+        yhat = model.predict(sample)
+        return yhat[0]
+    except Exception as e:
+        raise e
+
+def get_embedding_from_post(filestream, detector, model, version=2, camera='front'):
+    try:
+        # extract largest face in each filename
+        face = [extract_face_from_post(filestream, detector, camera=camera)]
         # convert into an array of samples
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels
