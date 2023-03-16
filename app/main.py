@@ -292,6 +292,56 @@ def upload_to_db(filename):
         return {"message": str(e)}, 400
 
 
+@app.route('/uploadtopost/<filename>', methods=['POST'])
+def upload_to_post(filename):
+    try:
+        args = request.args
+        camera_choice = args.get('camera')
+        role = args.get('role')
+        file = request.files['image']
+        filestream = file.stream
+        # Image name format = (Lastname_Firstname_Datetime).jpg
+        filename_fragment = filename.split('_')
+        upload_embedding = get_embedding_from_post(file, detector, vgg_descriptor, version=2, camera=camera_choice)
+
+        # Concatenate every fragment except the last one
+        person_name = '_'.join(filename_fragment[:-1])
+        image_name_without_extension = filename.split('.')[0]
+
+        filestream.seek(0)
+        # Move image to a correct location (correct bucket)
+        destination_blob = bucket.blob(f"application-data/verified_faces/{person_name}/{filename}")
+        destination_blob.content_type = 'image/jpeg'
+        destination_blob.upload_from_file(filestream)
+
+        # Upload to firestore
+        verified_ref = db.collection(u'verified_faces').document(person_name)
+        # if this document doesn't exist
+        if not verified_ref.get().exists:
+            verified_ref.set({'name': person_name, 'role': role, 'embedding_count': 1,
+                              'representative_embedding': upload_embedding.tolist(),
+                              'representative_url': destination_blob.public_url})
+        else:
+            # Get current representative embedding
+            representative_embedding = np.array(verified_ref.get().to_dict()['representative_embedding'])
+            # Get current embedding count
+            embedding_count = verified_ref.get().to_dict()['embedding_count']
+            # Calculate new representative embedding
+            new_representative_embedding = representative_embedding + (upload_embedding - representative_embedding) / (embedding_count + 1)
+            # Update representative embedding and embedding count
+            verified_ref.update({'representative_embedding': new_representative_embedding.tolist(),
+                                 'embedding_count': embedding_count + 1,
+                                 'representative_url': destination_blob.public_url})
+        verified_ref.collection(u'faces') \
+            .document(image_name_without_extension).set(
+            {'image_name': filename, 'image_url': destination_blob.public_url,
+             'resnet_embedding': upload_embedding.tolist()})
+        return {"message": "Upload success", "image_name": filename, 'image_url': destination_blob.public_url,
+                "person_name": person_name}
+    except Exception as e:
+        return {"message": str(e)}, 400
+
+
 if __name__ == "__main__":
     initialize_model()
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 80)), use_reloader=False)

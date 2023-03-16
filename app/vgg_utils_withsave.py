@@ -65,17 +65,17 @@ def extract_face_from_post(filestream, detector, camera, required_size=(224, 224
     except Exception as e:
         raise e
     # Save image
-    img.save("test3.jpg")
+    # img.save("test3.jpg")
 
     # Rotate image
     img = np.array(img)
-    rotated_img = img
+    # rotated_img = img
     if camera == 'front':
         rotated_img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
     else:
         rotated_img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-    rotated_img_real = Image.fromarray(rotated_img)
-    rotated_img_real.save("test_rotated3.jpg")
+    # rotated_img_real = Image.fromarray(rotated_img)
+    # rotated_img_real.save("test_rotated3.jpg")
 
     faces = detector.detect_faces(rotated_img)
     # faces = detector.detect_faces(img)
