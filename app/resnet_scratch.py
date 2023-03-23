@@ -1,9 +1,7 @@
-from tensorflow.keras.layers import Flatten, Dense, Input, GlobalAveragePooling2D, \
-    GlobalMaxPooling2D, Activation, Conv2D, MaxPooling2D, BatchNormalization, \
+from tensorflow.keras.layers import Input, GlobalAveragePooling2D, \
+    Activation, Conv2D, MaxPooling2D, BatchNormalization, \
     AveragePooling2D
-# from keras_applications.imagenet_utils import _obtain_input_shape
 from tensorflow.keras import backend as K
-# from tensorflow.keras.engine.topology import get_source_inputs
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers
 
@@ -74,17 +72,7 @@ def resnet_conv_block(input_tensor, kernel_size, filters, stage, block,
     return x
 
 
-def RESNET50(include_top=True, weights='vggface',
-             input_tensor=None, input_shape=None,
-             pooling=None,
-             classes=8631):
-    # input_shape = _obtain_input_shape(input_shape,
-    #                                   default_size=224,
-    #                                   min_size=32,
-    #                                   data_format=K.image_data_format(),
-    #                                   require_flatten=include_top,
-    #                                   weights=weights)
-
+def RESNET50(input_tensor=None, input_shape=None):
     if input_tensor is None:
         img_input = Input(shape=input_shape)
     else:
@@ -126,29 +114,14 @@ def RESNET50(include_top=True, weights='vggface',
 
     x = AveragePooling2D((7, 7), name='avg_pool')(x)
 
-    # if include_top:
-    #     x = Flatten()(x)
-    #     x = Dense(classes, activation='softmax', name='classifier')(x)
-    # else:
-    #     if pooling == 'avg':
-    #         x = GlobalAveragePooling2D()(x)
-    #     elif pooling == 'max':
-    #         x = GlobalMaxPooling2D()(x)
-
     x = GlobalAveragePooling2D()(x)
-    # x = Flatten()(x)
 
-    # Ensure that the model takes into account
-    # any potential predecessors of `input_tensor`.
-    # if input_tensor is not None:
-    #     inputs = get_source_inputs(input_tensor)
-    # else:
     inputs = img_input
-    # Create model.
+
+    # Create model
     model = Model(inputs, x, name='vggface_resnet50')
 
     # load weights
-    # model.load_weights('./app/weights/vggface_tf_resnet50.h5')
     model.load_weights('./app/weights/vggface_tf_notop_resnet50.h5')
 
     return model

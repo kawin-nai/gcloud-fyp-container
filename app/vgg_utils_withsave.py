@@ -161,11 +161,7 @@ def get_embedding(filename, detector, model, save_to_file=True):
     try:
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels
-        # samples = preprocess_input(samples, version=2)
-        # sample = preprocess_input(sample, data_format='channels_last')
         sample = preprocess_input_v2(sample)
-        # create a vggface model
-        # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
         # perform prediction
         yhat = model.predict(sample)
         if save_to_file:
@@ -192,6 +188,7 @@ def get_embedding_from_url(url, detector, model, version=2, camera='front'):
         return yhat[0]
     except Exception as e:
         raise e
+
 
 def get_embedding_from_post(filestream, detector, model, version=2, camera='front'):
     try:
