@@ -17,11 +17,6 @@ logging.getLogger().setLevel(logging.INFO)
 vgg_descriptor = None
 detector = None
 
-mnt_dir = os.environ.get('MNT_DIR', 'mnt')
-input_path = os.path.join(mnt_dir, "application-data", "input_faces")
-verified_path = os.path.join(mnt_dir, "application-data", "verified_faces")
-
-
 def initialize_model():
     global vgg_descriptor
     global detector
