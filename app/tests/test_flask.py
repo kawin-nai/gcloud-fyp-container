@@ -41,6 +41,12 @@ class FlaskTest(unittest.TestCase):
         statuscode = response.status_code
         self.assertEqual(statuscode, 405)
 
+    # Check for POST endpoint wit no data
+    def test_verify_post_endpoint_with_no_data(self):
+        tester = app.test_client(self)
+        response = tester.post("/verifyfrompost")
+        statuscode = response.status_code
+        self.assertEqual(statuscode, 400)
 
 def endpoint_test():
     unittest.main()

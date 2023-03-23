@@ -51,23 +51,23 @@ def senet_conv_block(input_tensor, kernel_size, filters,
 
     x = Conv2D(filters1, (1, 1), use_bias=bias, strides=strides,
                name=conv1_reduce_name)(input_tensor)
-    x = BatchNormalization(axis=bn_axis, name=conv1_reduce_name + "/bn",epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name=conv1_reduce_name + "/bn", epsilon=bn_eps)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters2, kernel_size, padding='same', use_bias=bias,
                name=conv3_name)(x)
-    x = BatchNormalization(axis=bn_axis, name=conv3_name + "/bn",epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name=conv3_name + "/bn", epsilon=bn_eps)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters3, (1, 1), name=conv1_increase_name, use_bias=bias)(x)
-    x = BatchNormalization(axis=bn_axis, name=conv1_increase_name + "/bn" ,epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name=conv1_increase_name + "/bn", epsilon=bn_eps)(x)
 
     se = senet_se_block(x, stage=stage, block=block, bias=True)
 
     shortcut = Conv2D(filters3, (1, 1), use_bias=bias, strides=strides,
                       name=conv1_proj_name)(input_tensor)
     shortcut = BatchNormalization(axis=bn_axis,
-                                  name=conv1_proj_name + "/bn",epsilon=bn_eps)(shortcut)
+                                  name=conv1_proj_name + "/bn", epsilon=bn_eps)(shortcut)
 
     m = layers.add([se, shortcut])
     m = Activation('relu')(m)
@@ -91,16 +91,16 @@ def senet_identity_block(input_tensor, kernel_size,
 
     x = Conv2D(filters1, (1, 1), use_bias=bias,
                name=conv1_reduce_name)(input_tensor)
-    x = BatchNormalization(axis=bn_axis, name=conv1_reduce_name + "/bn",epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name=conv1_reduce_name + "/bn", epsilon=bn_eps)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters2, kernel_size, padding='same', use_bias=bias,
                name=conv3_name)(x)
-    x = BatchNormalization(axis=bn_axis, name=conv3_name + "/bn",epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name=conv3_name + "/bn", epsilon=bn_eps)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters3, (1, 1), name=conv1_increase_name, use_bias=bias)(x)
-    x = BatchNormalization(axis=bn_axis, name=conv1_increase_name + "/bn",epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name=conv1_increase_name + "/bn", epsilon=bn_eps)(x)
 
     se = senet_se_block(x, stage=stage, block=block, bias=True)
 
@@ -138,7 +138,7 @@ def SENET50(include_top=True, weights='vggface',
     x = Conv2D(
         64, (7, 7), use_bias=False, strides=(2, 2), padding='same',
         name='conv1/7x7_s2')(img_input)
-    x = BatchNormalization(axis=bn_axis, name='conv1/7x7_s2/bn',epsilon=bn_eps)(x)
+    x = BatchNormalization(axis=bn_axis, name='conv1/7x7_s2/bn', epsilon=bn_eps)(x)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2))(x)
 
@@ -164,14 +164,16 @@ def SENET50(include_top=True, weights='vggface',
 
     x = AveragePooling2D((7, 7), name='avg_pool')(x)
 
-    if include_top:
-        x = Flatten()(x)
-        x = Dense(classes, activation='softmax', name='classifier')(x)
-    else:
-        if pooling == 'avg':
-            x = GlobalAveragePooling2D()(x)
-        elif pooling == 'max':
-            x = GlobalMaxPooling2D()(x)
+    # if include_top:
+    #     x = Flatten()(x)
+    #     x = Dense(classes, activation='softmax', name='classifier')(x)
+    # else:
+    #     if pooling == 'avg':
+    #         x = GlobalAveragePooling2D()(x)
+    #     elif pooling == 'max':
+    #         x = GlobalMaxPooling2D()(x)
+
+    x = GlobalAveragePooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
@@ -182,36 +184,6 @@ def SENET50(include_top=True, weights='vggface',
     # Create model.
     model = Model(inputs, x, name='vggface_senet50')
 
-    # load weights
-    # if weights == 'vggface':
-    #     if include_top:
-    #         weights_path = get_file('rcmalli_vggface_tf_senet50.h5',
-    #                                 utils.SENET50_WEIGHTS_PATH,
-    #                                 cache_subdir=utils.VGGFACE_DIR)
-    #     else:
-    #         weights_path = get_file('rcmalli_vggface_tf_notop_senet50.h5',
-    #                                 utils.SENET50_WEIGHTS_PATH_NO_TOP,
-    #                                 cache_subdir=utils.VGGFACE_DIR)
-    #     model.load_weights(weights_path)
-    #     if K.backend() == 'theano':
-    #         layer_utils.convert_all_kernels_in_model(model)
-    #         if include_top:
-    #             maxpool = model.get_layer(name='avg_pool')
-    #             shape = maxpool.output_shape[1:]
-    #             dense = model.get_layer(name='classifier')
-    #             layer_utils.convert_dense_weights_data_format(dense, shape,
-    #                                                           'channels_first')
-    #
-    #     if K.image_data_format() == 'channels_first' and K.backend() == 'tensorflow':
-    #         warnings.warn('You are using the TensorFlow backend, yet you '
-    #                       'are using the Theano '
-    #                       'image data format convention '
-    #                       '(`image_data_format="channels_first"`). '
-    #                       'For best performance, set '
-    #                       '`image_data_format="channels_last"` in '
-    #                       'your Keras config '
-    #                       'at ~/.keras/keras.json.')
-    # model.summary()
-    model.load_weights('./app/weights/vggface_tf_senet50.h5')
+    model.load_weights('./app/weights/vggface_tf_notop_senet50.h5')
 
     return model
