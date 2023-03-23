@@ -17,6 +17,7 @@ logging.getLogger().setLevel(logging.INFO)
 vgg_descriptor = None
 detector = None
 
+
 def initialize_model():
     global vgg_descriptor
     global detector
